@@ -179,7 +179,7 @@ def dimred(x_train,dim=2,vsplit=0.1):
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True)
 
     
-    vae.fit(x_train,x_train,batch_size=1024,epochs=50,callbacks=[es],validation_split=vsplit,shuffle=False)
+    vae.fit(x_train,x_train,batch_size=1024,epochs=50,callbacks=[es],validation_split=vsplit,shuffle=True)
 
     # train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
     # @tf.function
