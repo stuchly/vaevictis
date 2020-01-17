@@ -89,7 +89,7 @@ class Encoder(layers.Layer):
         repellant = tf.reduce_sum(tf.math.log(den))
 
         #b=tf.constant(10.0,dtype=tf.float64)*(repellant + attraction) / tf.cast(n,tf.float64)
-        b=7.0*(repellant + attraction) / tf.cast(n,tf.float64)
+        b=10.0*(repellant + attraction) / tf.cast(n,tf.float64)
         self.add_loss(b)
         return z_mean, z_log_var, z, jacobian
 
