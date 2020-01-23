@@ -161,7 +161,7 @@ class Vaevictis(tf.keras.Model):
         # Add KL divergence regularization loss.
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
-        self.add_loss(1.70*kl_loss)
+        self.add_loss(3.70*kl_loss)
         
         return reconstructed
 
@@ -179,7 +179,7 @@ def dimred(x_train,dim=2,vsplit=0.1):
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True)
 
     
-    vae.fit(x_train,x_train,batch_size=1024,epochs=55,callbacks=[es],validation_split=vsplit,shuffle=True)
+    vae.fit(x_train,x_train,batch_size=1024,epochs=56,callbacks=[es],validation_split=vsplit,shuffle=True)
 
     # train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
     # @tf.function
