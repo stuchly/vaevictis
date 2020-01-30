@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
-from tsne_helper_njit import compute_transition_probability
+from .tsne_helper_njit import compute_transition_probability
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -37,6 +37,7 @@ class Encoder(layers.Layer):
                  name='encoder',
                  dynamic=True,
                  perplexity=10.,
+                 alpha=10.,
                  **kwargs):
 
 
@@ -44,6 +45,7 @@ class Encoder(layers.Layer):
 
         super(Encoder, self).__init__(name=name, **kwargs)
         self.perplexity=perplexity
+        self.alpha=alpha
         self.encoder_shape=encoder_shape
         self.drop0=layers.Dropout(rate=0.2)
         self.drop=layers.Dropout(rate=drate)
@@ -91,7 +93,7 @@ class Encoder(layers.Layer):
         repellant = tf.reduce_sum(tf.math.log(den))
 
         #b=tf.constant(10.0,dtype=tf.float64)*(repellant + attraction) / tf.cast(n,tf.float64)
-        b=10.0*(repellant + attraction) / tf.cast(n,tf.float64)
+        b=self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
         self.add_loss(b)
         return z_mean, z_log_var, z, jacobian
 
@@ -150,12 +152,13 @@ class Vaevictis(tf.keras.Model):
                  decoder_shape=[32,32],
                  latent_dim=32,
                  perplexity=10.,
+                 alpha=10.,
                  name='autoencoder',
                  **kwargs):
         super(Vaevictis, self).__init__(name=name, **kwargs)
         self.original_dim = original_dim
         self.encoder = Encoder(latent_dim=latent_dim,
-                               encoder_shape=encoder_shape,perplexity=perplexity)
+                               encoder_shape=encoder_shape,perplexity=perplexity,alpha=alpha)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
 
     def call(self, inputs):
@@ -170,10 +173,10 @@ class Vaevictis(tf.keras.Model):
 
 
 
-def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],perplexity=10.,batch_size=512,epochs=100,patience=0):
+def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.):
 
 
-    vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity)
+    vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, alpha)
 
     optimizer = tf.keras.optimizers.Adam()
     mse_loss_fn = nll
@@ -211,8 +214,10 @@ def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,1
     #     return loss
 
     # loss=train()
-
+    def predict(data):
+        return vae.encoder.callp(data)[0].numpy()
+    
     #vae.save("vae_model")
     z_test = vae.encoder.callp(x_train)[0]
     z_test=z_test.numpy()
-    return z_test, vae.encoder.callp
+    return z_test, predict, vae
