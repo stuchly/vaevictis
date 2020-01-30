@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
-from .tsne_helper_njit import compute_transition_probability
+from tsne_helper_njit import compute_transition_probability
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -36,12 +36,14 @@ class Encoder(layers.Layer):
                  activation="relu",
                  name='encoder',
                  dynamic=True,
+                 perplexity=10.,
                  **kwargs):
 
 
 
 
         super(Encoder, self).__init__(name=name, **kwargs)
+        self.perplexity=perplexity
         self.encoder_shape=encoder_shape
         self.drop0=layers.Dropout(rate=0.2)
         self.drop=layers.Dropout(rate=drate)
@@ -57,7 +59,7 @@ class Encoder(layers.Layer):
 
         x=inputs
         #x=tf.keras.backend.in_train_phase(layers.GaussianNoise(.1)(x),x,training=training)
-        p=tf.numpy_function(compute_transition_probability,[x],tf.float64)
+        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
         nu = tf.constant(1.0, dtype=tf.float64)
         n=tf.shape(inputs)[0]
         # with tf.GradientTape() as g:
@@ -147,12 +149,13 @@ class Vaevictis(tf.keras.Model):
                  encoder_shape=[32,32],
                  decoder_shape=[32,32],
                  latent_dim=32,
+                 perplexity=10.,
                  name='autoencoder',
                  **kwargs):
         super(Vaevictis, self).__init__(name=name, **kwargs)
         self.original_dim = original_dim
         self.encoder = Encoder(latent_dim=latent_dim,
-                               encoder_shape=encoder_shape)
+                               encoder_shape=encoder_shape,perplexity=perplexity)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
 
     def call(self, inputs):
@@ -167,19 +170,19 @@ class Vaevictis(tf.keras.Model):
 
 
 
-def dimred(x_train,dim=2,vsplit=0.1):
+def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],perplexity=10.,batch_size=512,epochs=100,patience=0):
 
 
-    vae = Vaevictis(x_train.shape[1], [128,256,64,32],[32,64,256,128], dim)
+    vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity)
 
     optimizer = tf.keras.optimizers.Adam()
     mse_loss_fn = nll
     vae.compile(optimizer,loss=nll)
 
-    es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True)
+    es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
 
     
-    vae.fit(x_train,x_train,batch_size=1024,epochs=156,callbacks=[es],validation_split=vsplit,shuffle=True)
+    vae.fit(x_train,x_train,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
 
     # train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
     # @tf.function
