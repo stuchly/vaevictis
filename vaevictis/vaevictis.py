@@ -57,7 +57,7 @@ class Encoder(layers.Layer):
         self.sampling = Sampling()
 
 
-    def call(self, inputs,training=None):
+    def callt(self, inputs,training=None):
 
         x=inputs
         #x=tf.keras.backend.in_train_phase(layers.GaussianNoise(.1)(x),x,training=training)
@@ -97,27 +97,17 @@ class Encoder(layers.Layer):
         self.add_loss(b)
         return z_mean, z_log_var, z, jacobian
 
-    # def call(self, inputs,training=None):
-        
-    #     x=inputs
-    #     for dl in self.dense_proj: x=dl(x)
-    #     z_mean = self.dense_mean(x)
-    #     z_log_var = self.dense_log_var(x)
-    #     z = self.sampling((z_mean, z_log_var))
-
-       
-    #     self.add_loss(D)
-        
-    #     return z_mean, z_log_var, z, 0
-        
-
     def callp(self,inputs):
         x=inputs
         for dl in self.dense_proj: x=dl(x)
         z_mean = self.dense_mean(x)
         z_log_var = self.dense_log_var(x)
-        z = self.sampling((z_mean, z_log_var))
-        return z_mean, z_log_var, z
+        #z = self.sampling((z_mean, z_log_var))
+        return z_mean, z_log_var, z_mean, 0.
+        
+    def call(self,inputs,training=None):
+        z_mean, z_log_var, z, jacobian = K.in_train_phase(self.callt(inputs),self.callp(inputs), training=training) 
+        return z_mean, z_log_var, z, jacobian
 
 class Decoder(layers.Layer):
 
@@ -161,13 +151,13 @@ class Vaevictis(tf.keras.Model):
                                encoder_shape=encoder_shape,perplexity=perplexity,alpha=alpha)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
 
-    def call(self, inputs):
-        z_mean, z_log_var, z, _ = self.encoder(inputs)
+    def call(self, inputs, training=None):
+        z_mean, z_log_var, z, _ = self.encoder(inputs,training=training)
         reconstructed = self.decoder(z)
         # Add KL divergence regularization loss.
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
-        self.add_loss(3.70*kl_loss)
+        self.add_loss(kl_loss)
         
         return reconstructed
 
