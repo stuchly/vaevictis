@@ -97,6 +97,47 @@ class Encoder(layers.Layer):
         self.add_loss(b)
         return z_mean, z_log_var, z, jacobian
 
+    def callv(self, inputs,training=None):
+
+        x=inputs
+        #x=tf.keras.backend.in_train_phase(layers.GaussianNoise(.1)(x),x,training=training)
+        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
+        nu = tf.constant(1.0, dtype=tf.float64)
+        n=tf.shape(inputs)[0]
+        # with tf.GradientTape() as g:
+        #     g.watch(inputs)
+        #x=inputs
+        for dl in self.dense_proj: x=dl(x)
+        z_mean = self.dense_mean(x)
+        z_log_var = self.dense_log_var(x)
+        z = z_mean
+        # jacobian=g.jacobian(z,inputs) ##computes jacobian, if frob=0. below, only consumes time
+        # frob=eta*(tf.norm(jacobian)**2)
+        # frob=0.
+        # self.add_loss(frob)
+        jacobian=0.
+        sum_y = tf.reduce_sum(tf.square(z), 1)
+        num = tf.constant(-2.0,tf.float64) * tf.matmul(z,
+                               z,
+                               transpose_b=True) + tf.reshape(sum_y, [-1, 1]) + sum_y
+        num = num / nu
+
+        p = p + tf.constant(0.1,tf.float64) / tf.cast(n,tf.float64)
+        p = p / tf.expand_dims(tf.reduce_sum(p, 1), 1)
+
+        num = tf.pow(tf.constant(1.0,tf.float64) + num, -(nu + tf.constant(1.0,tf.float64)) / tf.constant(2.0,tf.float64))
+        attraction = tf.multiply(p, tf.math.log(num))
+        attraction = -tf.reduce_sum(attraction)
+
+        den = tf.reduce_sum(num, 1) - 1
+        repellant = tf.reduce_sum(tf.math.log(den))
+
+        #b=tf.constant(10.0,dtype=tf.float64)*(repellant + attraction) / tf.cast(n,tf.float64)
+        b=self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
+        self.add_loss(b)
+        return z_mean, z_log_var, z, jacobian
+
+
     def callp(self,inputs):
         x=inputs
         for dl in self.dense_proj: x=dl(x)
@@ -106,7 +147,7 @@ class Encoder(layers.Layer):
         return z_mean, z_log_var, z_mean, 0.
         
     def call(self,inputs,training=None):
-        z_mean, z_log_var, z, jacobian = K.in_train_phase(self.callt(inputs),self.callp(inputs), training=training) 
+        z_mean, z_log_var, z, jacobian = K.in_train_phase(self.callt(inputs),self.callv(inputs), training=training) 
         return z_mean, z_log_var, z, jacobian
 
 class Decoder(layers.Layer):
