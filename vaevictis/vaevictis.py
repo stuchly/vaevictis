@@ -94,8 +94,8 @@ class Encoder(layers.Layer):
 
         #b=tf.constant(10.0,dtype=tf.float64)*(repellant + attraction) / tf.cast(n,tf.float64)
         b=self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
-        self.add_loss(b)
-        return z_mean, z_log_var, z, jacobian
+        #self.add_loss(b)
+        return z_mean, z_log_var, z, jacobian, b
 
     def callv(self, inputs,training=None):
 
@@ -134,8 +134,8 @@ class Encoder(layers.Layer):
 
         #b=tf.constant(10.0,dtype=tf.float64)*(repellant + attraction) / tf.cast(n,tf.float64)
         b=self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
-        self.add_loss(b)
-        return z_mean, z_log_var, z, jacobian
+        #self.add_loss(b)
+        return z_mean, z_log_var, z, jacobian, b
 
 
     def callp(self,inputs):
@@ -147,7 +147,8 @@ class Encoder(layers.Layer):
         return z_mean, z_log_var, z_mean, 0.
         
     def call(self,inputs,training=None):
-        z_mean, z_log_var, z, jacobian = K.in_train_phase(self.callt(inputs),self.callv(inputs), training=training) 
+        z_mean, z_log_var, z, jacobian, b = K.in_train_phase(self.callt(inputs),self.callv(inputs), training=training) 
+        self.add_loss(b)
         return z_mean, z_log_var, z, jacobian
 
 class Decoder(layers.Layer):
