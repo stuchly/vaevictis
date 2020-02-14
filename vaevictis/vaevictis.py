@@ -233,7 +233,7 @@ class Vaevictis(tf.keras.Model):
         
     def predict_np(self):
         def predict(data):
-           return self.encoder.callp(data)[0].numpy()
+           return self.encoder.callp(data).numpy()
         return(predict)
 
 
@@ -281,10 +281,10 @@ def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,1
 
     # loss=train()
     def predict(data):
-        return vae.encoder.callp(data)[0].numpy()
+        return vae.encoder.callp(data).numpy()
     
     #vae.save("vae_model")
-    z_test = vae.encoder.callp(x_train)[0]
+    z_test = vae.encoder.callp(x_train)
     z_test=z_test.numpy()
     return z_test, predict, vae
     
