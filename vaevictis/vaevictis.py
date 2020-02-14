@@ -226,7 +226,7 @@ class Vaevictis(tf.keras.Model):
         json.dump(json_config, open(config_file,'w'))
         self.save_weights(weights_file)
     
-    def refit(self,x_train,perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10):
+    def refit(self,x_train,perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10,vsplit=0.1):
         es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
         self.fit(x_train,x_train,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,
         shuffle=True)
