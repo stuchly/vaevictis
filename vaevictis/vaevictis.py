@@ -230,6 +230,11 @@ class Vaevictis(tf.keras.Model):
         es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
         self.fit(x_train,x_train,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,
         shuffle=True)
+        
+    # def predict.np(self):
+    #     def predict(data):
+    #         return self.encoder.callp(data)[0].numpy()
+    #     return(predict)
 
 
 
