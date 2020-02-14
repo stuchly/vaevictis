@@ -5,6 +5,7 @@ import numpy as np
 from .tsne_helper_njit import compute_transition_probability
 from tensorflow.keras.callbacks import EarlyStopping
 import os
+import json
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 K.set_floatx('float64')
 eps_std=tf.constant(1e-2,dtype=tf.float64)
@@ -142,9 +143,9 @@ class Encoder(layers.Layer):
         x=inputs
         for dl in self.dense_proj: x=dl(x)
         z_mean = self.dense_mean(x)
-        z_log_var = self.dense_log_var(x)
+        #z_log_var = self.dense_log_var(x)
         #z = self.sampling((z_mean, z_log_var))
-        return z_mean, z_log_var, z_mean, 0.
+        return z_mean #, z_log_var, z_mean, 0.
         
     def call(self,inputs,training=None):
         z_mean, z_log_var, z, jacobian, b = K.in_train_phase(self.callt(inputs),self.callv(inputs), training=training) 
@@ -185,10 +186,16 @@ class Vaevictis(tf.keras.Model):
                  latent_dim=32,
                  perplexity=10.,
                  alpha=10.,
-                 name='autoencoder',
+                 name='Vaevictis',
                  **kwargs):
         super(Vaevictis, self).__init__(name=name, **kwargs)
         self.original_dim = original_dim
+        self.encoder_shape = encoder_shape
+        self.decoder_shape = decoder_shape
+        self.latent_dim = latent_dim
+        self.perplexity = perplexity
+        self.alpha = alpha
+        
         self.encoder = Encoder(latent_dim=latent_dim,
                                encoder_shape=encoder_shape,perplexity=perplexity,alpha=alpha)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
@@ -202,6 +209,24 @@ class Vaevictis(tf.keras.Model):
         self.add_loss(kl_loss)
         
         return reconstructed
+
+    def get_config(self):
+        #config = super(Vaevictis, self).get_config()
+        #config.update({'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
+        #    'decoder_shape': self.decoder_shape, 'latent_dim': self.latent_dim, 'perplexity': self.perplexity,
+        #    'alpha': self.alpha, 'name': self.name})
+        #return config
+        return {'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
+            'decoder_shape': self.decoder_shape, 'latent_dim': self.latent_dim, 'perplexity': self.perplexity,
+            'alpha': self.alpha, 'name': self.name}
+    
+    def save(self, config_file, weights_file):
+        
+        json_config=self.get_config()
+        json.dump(json_config, open(config_file,'w'))
+        self.save_weights(weights_file)
+
+
 
 
 
@@ -253,3 +278,18 @@ def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,1
     z_test = vae.encoder.callp(x_train)[0]
     z_test=z_test.numpy()
     return z_test, predict, vae
+    
+def loadModel(config_file,weights_file):
+    config = json.load(open(config_file))
+    new_model=Vaevictis(config["original_dim"], config["encoder_shape"],
+    config["decoder_shape"], config["latent_dim"], config["perplexity"], config["alpha"])
+    
+    optimizer = tf.keras.optimizers.Adam()
+    mse_loss_fn = nll
+    new_model.compile(optimizer,loss=nll)
+    x=np.random.rand(10,config["original_dim"])
+    new_model.train_on_batch(x,x)
+    new_model.load_weights(weights_file)
+    return new_model
+
+    
