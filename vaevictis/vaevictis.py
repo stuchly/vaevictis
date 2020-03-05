@@ -286,7 +286,7 @@ def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,1
     #vae.save("vae_model")
     z_test = vae.encoder.callp(x_train)
     z_test=z_test.numpy()
-    return z_test, predict, vae
+    return z_test, predict, vae, vae.get_config(), vae.get_weights()
     
 def loadModel(config_file,weights_file):
     config = json.load(open(config_file))
