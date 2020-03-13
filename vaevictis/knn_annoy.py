@@ -117,18 +117,19 @@ class KNN_Worker(Process):
     indices to retrieve.
     """
     def __init__(self, index_filepath, k, search_k, n_dims,
-                 data_indices, results_queue):
+                 data_indices, results_queue,metric="euclidean"):
         self.index_filepath = index_filepath
         self.k = k
         self.n_dims = n_dims
         self.search_k = search_k
         self.data_indices = data_indices
         self.results_queue = results_queue
+        self.metric=metric
         super(KNN_Worker, self).__init__()
 
     def run(self):
         try:
-            index = AnnoyIndex(self.n_dims, metric='angular')
+            index = AnnoyIndex(self.n_dims, metric=self.metric)
             index.load(self.index_filepath)
             for i in range(self.data_indices[0], self.data_indices[1]):
                 neighbour_indexes = index.get_nns_by_item(

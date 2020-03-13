@@ -15,8 +15,9 @@ import tensorflow.keras.backend as K
 
 def input_compute(x,k=16): #x représente un dataset 
 
-  build_annoy_index(x,"./ind",build_index_on_disk=True)
-  knn_matrix = extract_knn(x,"./ind")
+  build_annoy_index(x,"ind",build_index_on_disk=True)
+  knn_matrix = extract_knn(x,"ind")
+  print(knn_matrix)
   positive = np.empty(np.shape(x))
   negative = np.empty(np.shape(x))
 
@@ -43,8 +44,8 @@ def cosine_distance(x, y):
   return K.sum(x * y, axis = 1, keepdims = True)/(norm(x)*norm(y))
 
 def pn_loss_builder(distance="euclidean", margin=1.):    
-  def _pn_loss(y_true, y_pred, distance=distance, margin=margin):    
-    anchor, positive, negative = tf.unstack(y_pred)
+  def _pn_loss(y_pred, distance=distance, margin=margin):    
+    anchor, positive, negative = y_pred[0], y_pred[1], y_pred[2]
   
     if distance == "euclidean":
       distance = euclidean_distance

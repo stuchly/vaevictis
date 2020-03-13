@@ -93,6 +93,8 @@ class Vaevictis(tf.keras.Model):
                  latent_dim=32,
                  perplexity=10.,
                  alpha=10.,
+                 metric="euclidean",
+                 margin=1.,
                  name='Vaevictis',
                  **kwargs):
         super(Vaevictis, self).__init__(name=name, **kwargs)
@@ -102,7 +104,7 @@ class Vaevictis(tf.keras.Model):
         self.latent_dim = latent_dim
         self.perplexity = perplexity
         self.alpha = alpha
-        
+        self.pn=pn_loss_builder(metric, margin)
         self.encoder = Encoder(latent_dim=latent_dim,
                                encoder_shape=encoder_shape)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
@@ -110,6 +112,9 @@ class Vaevictis(tf.keras.Model):
 
     def call(self, inputs, training=None):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
+        anch, _ =self.encoder(inputs[1],training=training)
+        neg, _ = self.encoder(inputs[2],training=training)
+        pnl=self.pn((z_mean,anch,neg))
         
         b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(b)
@@ -121,8 +126,8 @@ class Vaevictis(tf.keras.Model):
         return reconstructed
         
     def tsne_reg(self,x,z):
-        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
-        # p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
+        # p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
+        p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
         nu = tf.constant(1.0, dtype=tf.float64)
         n=tf.shape(x)[0]
         
@@ -171,46 +176,46 @@ def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,1
 perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,save=None,load=None):
 
     triplets=input_compute(x_train)
-    
+    #triplets=(x_train,x_train,x_train)
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, alpha)
 
     optimizer = tf.keras.optimizers.Adam()
-    mse_loss_fn = nll
-    vae.compile(optimizer,loss=nll)
+    # mse_loss_fn = nll
+    # vae.compile(optimizer,loss=nll)
+    # 
+    # es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
+    # 
+    # 
+    # vae.fit(triplets,triplets,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
 
-    es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
+    train_dataset = tf.data.Dataset.from_tensor_slices(triplets) ## eager debugging
+    #@tf.function
+    def train_one_step(m1,optimizer,x):
+        with tf.GradientTape() as tape:
+            tape.watch(m1.trainable_weights)
+            reconstructed = m1(x)
+            # Compute reconstruction loss
+            loss = nll(x, reconstructed)
 
+            loss += sum(m1.losses)  # Add KLD regularization loss
 
-    vae.fit(triplets,triplets,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
-
-    # train_dataset = tf.data.Dataset.from_tensor_slices(x_train) ## eager debugging
-    # @tf.function
-    # def train_one_step(m1,optimizer,x):
-    #     with tf.GradientTape() as tape:
-    #         tape.watch(m1.trainable_weights)
-    #         reconstructed = m1(x)
-    #         # Compute reconstruction loss
-    #         loss = nll(x, reconstructed)
-    # 
-    #         loss += sum(m1.losses)  # Add KLD regularization loss
-    # 
-    #     grads = tape.gradient(loss, m1.trainable_weights)
-    #     optimizer.apply_gradients(zip(grads, m1.trainable_weights))
-    #     return loss
-    # 
-    # 
-    # 
+        grads = tape.gradient(loss, m1.trainable_weights)
+        optimizer.apply_gradients(zip(grads, m1.trainable_weights))
+        return loss
+    #
+    #
+    #
     # # # Iterate over epochs.
-    # def train():
-    #     loss=0.
-    #     for epoch in range(epochs):
-    #         print('Start of epoch %d' % (epoch,))
-    #         for  x_batch_train in train_dataset.batch(128):
-    #             loss=train_one_step(vae,optimizer,x_batch_train)
-    #     return loss
-    # 
-    # loss=train()
-   
+    def train():
+        loss=0.
+        for epoch in range(epochs):
+            print('Start of epoch %d' % (epoch,))
+            for  x_batch_train in train_dataset.batch(128):
+                loss=train_one_step(vae,optimizer,x_batch_train)
+        return loss
+
+    loss=train()
+
     def predict(data):
         return vae.encoder(data)[0].numpy()
     
