@@ -115,7 +115,7 @@ class Vaevictis(tf.keras.Model):
         anch, _ =self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
         pnl=self.pn((z_mean,anch,neg))
-        
+        self.add_loss(pnl)
         b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(b)
         kl_loss = - 0.5 * tf.reduce_mean(
@@ -219,7 +219,6 @@ perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,ivis_pretrain=0,ww
     def predict(data):
         return vae.encoder(data)[0].numpy()
     
-    #vae.save("vae_model")
     z_test = vae.encoder(x_train)[0]
     z_test=z_test.numpy()
     return z_test, predict, vae, vae.get_config(), vae.get_weights()
