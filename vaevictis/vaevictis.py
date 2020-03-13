@@ -124,9 +124,9 @@ class Vaevictis(tf.keras.Model):
         anch, _ =self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
         pnl=self.pn((z_mean,anch,neg))
-        self.add_loss(self.ww[2]*pnl)
+        self.add_loss(self.ww[1]*pnl)
         b=self.tsne_reg(inputs[0],z_mean)
-        self.add_loss(self.ww[1]*b)
+        self.add_loss(self.ww[0]*b)
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
         self.add_loss(kl_loss)
