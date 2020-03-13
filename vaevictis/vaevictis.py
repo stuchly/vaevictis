@@ -161,7 +161,7 @@ class Vaevictis(tf.keras.Model):
         self.add_loss(self.ww[0]*b)
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
-        self.add_loss(kl_loss)
+        self.add_loss(self.ww[3]*kl_loss)
         z = self.sampling((z_mean, z_log_var))
         reconstructed = self.decoder(z)
         return reconstructed
@@ -209,7 +209,7 @@ metric="euclidean",margin=1.):
     epochs : integer, maximum number of epochs
     patience : integer, callback patience
     ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
-    ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error
+    ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error, KL divergence
     """
     
     triplets=input_compute(x_train)
