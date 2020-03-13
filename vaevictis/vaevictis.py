@@ -42,7 +42,7 @@ class Encoder(layers.Layer):
                  drate=0.1,
                  encoder_shape=[32,32],
                  latent_dim=32,
-                 activation="relu",
+                 activation="selu",
                  name='encoder',
                  dynamic=True,
                  **kwargs):
@@ -52,8 +52,8 @@ class Encoder(layers.Layer):
 
         super(Encoder, self).__init__(name=name, **kwargs)
         self.encoder_shape=encoder_shape
-        self.drop0=layers.Dropout(rate=0.2)
-        self.drop=layers.Dropout(rate=drate)
+        # self.drop0=layers.Dropout(rate=0.2)
+        self.alphadrop=layers.AlphaDropout(rate=drate)
         self.dense_proj = [None]*len(encoder_shape)
         for i,v in enumerate(self.encoder_shape):
             self.dense_proj[i]=layers.Dense(v,activation=activation)
@@ -63,7 +63,7 @@ class Encoder(layers.Layer):
 
     def call(self,inputs,training=None):
         x = inputs
-        for dl in self.dense_proj: x=dl(x)
+        for dl in self.dense_proj: x=self.alphadrop(dl(x))
         return self.dense_mean(x), self.dense_log_var(x)    
 
 class Decoder(layers.Layer):
