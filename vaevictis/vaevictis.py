@@ -117,7 +117,7 @@ class Vaevictis(tf.keras.Model):
         pnl=self.pn((z_mean,anch,neg))
         self.add_loss(self.ww[1]*pnl)
         b=self.tsne_reg(inputs[0],z_mean)
-        self.add_loss(b)
+        self.add_loss(self.ww[0]*b)
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
         self.add_loss(kl_loss)
@@ -146,7 +146,7 @@ class Vaevictis(tf.keras.Model):
 
         den = tf.reduce_sum(num, 1) - 1
         repellant = tf.reduce_sum(tf.math.log(den))
-        return self.ww[0]*(repellant + attraction) / tf.cast(n,tf.float64)
+        return (repellant + attraction) / tf.cast(n,tf.float64)
         
     def get_config(self):
         return {'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
