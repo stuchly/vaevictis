@@ -121,9 +121,9 @@ class Vaevictis(tf.keras.Model):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
         anch, _ =self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
-        pnl=self.ww[1]*self.pn((z_mean,anch,neg))
+        pnl=self.pn((z_mean,anch,neg))
         self.add_loss(pnl)
-        b=self.ww[0]*self.tsne_reg(inputs[0],z_mean)
+        b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(b)
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
@@ -188,7 +188,7 @@ metric="euclidean",margin=1.):
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
 
     optimizer = tf.keras.optimizers.Adam()
-    nll_f=nll_build(ww)
+    #nll_f=nll_build(ww)
     vae.compile(optimizer,loss=nll)
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
