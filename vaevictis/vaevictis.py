@@ -182,7 +182,7 @@ class Vaevictis(tf.keras.Model):
 
 
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
-perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,1.,1.],
+perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,10.,1.],
 metric="euclidean",margin=1.):
 
     triplets=input_compute(x_train)
