@@ -10,7 +10,7 @@ from tqdm import tqdm
 import time
 
 
-def build_annoy_index(X, path, ntrees=50, build_index_on_disk=True, verbose=1):
+def build_annoy_index(X, path="./ind", ntrees=50, build_index_on_disk=True, verbose=1):
     """ Build a standalone annoy index.
     :param array X: numpy array with shape (n_samples, n_features)
     :param str path: The filepath of a trained annoy index file
