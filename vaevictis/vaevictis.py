@@ -3,7 +3,7 @@ import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
 from .tsne_helper_njit import compute_transition_probability
-from .ivis_helper import input_compute, pn_loss_builder
+from .ivis_helper import input_compute, pn_loss_builder, pn_loss
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 import json
@@ -24,8 +24,10 @@ def nll_builder(ww):
         """ loss """
     
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
+    def nll_null(y_true, y_pred):
+        return tf.reduce_mean(y_true)
         
-    return nll
+    return nll if ww[2]>0. else nll_null
 
 def tsne_reg_builder(ww,perplexity):
         
@@ -95,7 +97,7 @@ class Encoder(layers.Layer):
 
     def call(self,inputs,training=None):
         x = inputs
-        for dl in self.dense_proj: x=dl(x)
+        for dl in self.dense_proj: x=self.alphadrop(dl(x))
         return self.dense_mean(x), self.dense_log_var(x)    
 
 class Decoder(layers.Layer):
@@ -134,7 +136,7 @@ class Vaevictis(tf.keras.Model):
                  perplexity=10.,
                  metric="euclidean",
                  margin=1.,
-                 ww=[10.,1.,1.],
+                 ww=[10.,1.,1.,1.],
                  name='Vaevictis',
                  **kwargs):
         super(Vaevictis, self).__init__(name=name, **kwargs)
@@ -146,9 +148,9 @@ class Vaevictis(tf.keras.Model):
         self.metric=metric
         self.margin=margin
         self.ww = ww
-        self.pn=pn_loss_builder(metric, margin)
+        self.pn=pn_loss ## something wrong here - builder does not work
         self.encoder = Encoder(latent_dim=latent_dim,
-                               encoder_shape=encoder_shape,drate=0.1)
+                               encoder_shape=encoder_shape,drate=0.2)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape, drate=0.1)
         self.sampling = Sampling()
         self.tsne_reg=tsne_reg_builder(ww,self.perplexity)
@@ -193,8 +195,8 @@ class Vaevictis(tf.keras.Model):
 
 
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
-perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,10.,1.],
-metric="euclidean",margin=1.,k=30):
+perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,10.,1.,1.],
+metric="euclidean",margin=1.,k=30,knn=None):
 
     """Wrapper for model build and training
 
@@ -213,9 +215,10 @@ metric="euclidean",margin=1.,k=30):
     ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
     ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error, KL divergence
     k : integer, number of nearest neighbors
+    knn : integer array, precomputed knn matrix
     """
     
-    triplets=input_compute(x_train,k)
+    triplets=input_compute(x_train,k,knn)
     
     optimizer = tf.keras.optimizers.Adam()
     if ivis_pretrain>0:
