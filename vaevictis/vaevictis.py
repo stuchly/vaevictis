@@ -27,7 +27,7 @@ def nll_build(ww):
 
 def tsne_reg_build(ww):
         
-        def tsne_reg(self,x,z):
+        def tsne_reg(x,z):
             p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
             # p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
             nu = tf.constant(1.0, dtype=tf.float64)
