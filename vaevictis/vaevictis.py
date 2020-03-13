@@ -17,7 +17,7 @@ def nll(y_true, y_pred):
     
     return tf.reduce_mean((y_true-y_pred)**2)
     
-def nll_build(ww):
+def nll_builder(ww):
     
     def nll(y_true, y_pred):
         """ loss """
@@ -25,11 +25,11 @@ def nll_build(ww):
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
     return nll
 
-def tsne_reg_build(ww):
+def tsne_reg_builder(ww,perplexity):
         
         def tsne_reg(x,z):
-            p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
-            # p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
+            p=tf.numpy_function(compute_transition_probability,[x,perplexity, 1e-4, 50,False],tf.float64)
+            # p=compute_transition_probability(x.numpy(),perplexity, 1e-4, 50,False) ## for eager dubugging
             nu = tf.constant(1.0, dtype=tf.float64)
             n=tf.shape(x)[0]
         
@@ -148,7 +148,7 @@ class Vaevictis(tf.keras.Model):
                                encoder_shape=encoder_shape)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
         self.sampling = Sampling()
-        self.tsne_reg=tsne_reg_build(ww)
+        self.tsne_reg=tsne_reg_builder(ww,self.perplexity)
 
     def call(self, inputs, training=None):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
@@ -216,7 +216,7 @@ metric="euclidean",margin=1.):
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
 
     optimizer = tf.keras.optimizers.Adam()
-    nll_f=nll_build(ww)
+    nll_f=nll_builder(ww)
     vae.compile(optimizer,loss=nll_f)
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
@@ -266,7 +266,7 @@ def loadModel(config_file,weights_file):
     config["metric"], config["margin"], config["ww"])
     
     optimizer = tf.keras.optimizers.Adam()
-    nll_f=nll_build(config["ww"])
+    nll_f=nll_builder(config["ww"])
     new_model.compile(optimizer,loss=nll_f)
     x=np.random.rand(10,config["original_dim"])
     new_model.train_on_batch(x,x)
