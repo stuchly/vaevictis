@@ -184,6 +184,26 @@ class Vaevictis(tf.keras.Model):
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
 perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,10.,1.],
 metric="euclidean",margin=1.):
+"""
+Wrapper for model build and training
+
+Parameters
+----------
+x_train : array, shape (n_samples, n_dims)
+          Data to embedd, training dataset
+dim : integer, embedding_dim
+vsplit : float, proportion of data used at validation step - splitted befor shuffling!
+enc_shape : list of integers, shape of the encoder i.e. [128, 128, 128] means 3 dense layers with 128 neurons
+dec_shape : list of integers, shape of the decoder
+perplexity : float, perplexity parameter for tsne regularisation
+batch_size : integer, batch size
+epochs : integer, maximum number of epochs
+patience : integer, callback patience
+ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
+ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error; 
+everything is computed even with zero weight - to be optimised
+"""
+    
 
     triplets=input_compute(x_train)
     #triplets=(x_train,x_train,x_train)
