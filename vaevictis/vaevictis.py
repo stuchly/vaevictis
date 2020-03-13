@@ -186,7 +186,7 @@ perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,save=None,load=Non
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
 
 
-    vae.fit(triplets,triplets,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
+    vae.fit(triplets,triplets[0],batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
 
     # train_dataset = tf.data.Dataset.from_tensor_slices(triplets) ## eager debugging
     #@tf.function
