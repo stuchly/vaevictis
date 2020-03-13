@@ -21,7 +21,7 @@ def input_compute(x,k=16,knn_matrix=None): #x représente un dataset
   negative = np.empty(np.shape(x))
 
   for i, clust in enumerate(knn_matrix):
-    positive[i,:] = x[random.choice(clust),:]
+    positive[i,:] = x[random.choice(clust[1:]),:]
     negative[i,:] = x[random.choice(knn_matrix[:,0]),:]
 
   inputs = [x,positive,negative]

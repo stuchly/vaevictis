@@ -25,7 +25,7 @@ def nll_builder(ww):
     
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
     def nll_null(y_true, y_pred):
-        return tf.reduce_mean(y_true)
+        return 0.
         
     return nll if ww[2]>0. else nll_null
 
@@ -154,7 +154,8 @@ class Vaevictis(tf.keras.Model):
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape, drate=0.1)
         self.sampling = Sampling()
         self.tsne_reg=tsne_reg_builder(ww,self.perplexity)
-
+        self.nll=nll_builder(ww)
+        
     def call(self, inputs, training=None):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
         pos, _ = self.encoder(inputs[1],training=training)
@@ -168,6 +169,8 @@ class Vaevictis(tf.keras.Model):
         self.add_loss(self.ww[3]*kl_loss)
         z = self.sampling((z_mean, z_log_var))
         reconstructed = self.decoder(z)
+        # rls=self.nll(inputs[1],reconstructed)
+        # self.add_loss(self.ww[2]*rls)
         return reconstructed
         
     def get_config(self):
@@ -224,6 +227,7 @@ metric="euclidean",margin=1.,k=30,knn=None):
     if ivis_pretrain>0:
         ww1=ww.copy()
         ww1[0]=-1.
+        ##ww1[1]=np.maximum(ww1[1],1.)
         vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww1)
         nll_f=nll_builder(ww1)
         vae.compile(optimizer,loss=nll_f)
