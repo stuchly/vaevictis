@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
-from .tsne_helper_njit import compute_transition_probability
+from tsne_helper_njit import compute_transition_probability
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 import json
@@ -37,16 +37,12 @@ class Encoder(layers.Layer):
                  activation="relu",
                  name='encoder',
                  dynamic=True,
-                 perplexity=10.,
-                 alpha=10.,
                  **kwargs):
 
 
 
 
         super(Encoder, self).__init__(name=name, **kwargs)
-        self.perplexity=perplexity
-        self.alpha=alpha
         self.encoder_shape=encoder_shape
         self.drop0=layers.Dropout(rate=0.2)
         self.drop=layers.Dropout(rate=drate)
@@ -55,102 +51,12 @@ class Encoder(layers.Layer):
             self.dense_proj[i]=layers.Dense(v,activation=activation)
         self.dense_mean = layers.Dense(latent_dim)
         self.dense_log_var = layers.Dense(latent_dim)
-        self.sampling = Sampling()
 
 
-    def callt(self, inputs,training=None):
-
-        x=inputs
-        #x=tf.keras.backend.in_train_phase(layers.GaussianNoise(.1)(x),x,training=training)
-        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
-        nu = tf.constant(1.0, dtype=tf.float64)
-        n=tf.shape(inputs)[0]
-        # with tf.GradientTape() as g:
-        #     g.watch(inputs)
-        #x=inputs
-        for dl in self.dense_proj: x=dl(x)
-        z_mean = self.dense_mean(x)
-        z_log_var = self.dense_log_var(x)
-        z = self.sampling((z_mean, z_log_var))
-        # jacobian=g.jacobian(z,inputs) ##computes jacobian, if frob=0. below, only consumes time
-        # frob=eta*(tf.norm(jacobian)**2)
-        # frob=0.
-        # self.add_loss(frob)
-        jacobian=0.
-        sum_y = tf.reduce_sum(tf.square(z), 1)
-        num = tf.constant(-2.0,tf.float64) * tf.matmul(z,
-                               z,
-                               transpose_b=True) + tf.reshape(sum_y, [-1, 1]) + sum_y
-        num = num / nu
-
-        p = p + tf.constant(0.1,tf.float64) / tf.cast(n,tf.float64)
-        p = p / tf.expand_dims(tf.reduce_sum(p, 1), 1)
-
-        num = tf.pow(tf.constant(1.0,tf.float64) + num, -(nu + tf.constant(1.0,tf.float64)) / tf.constant(2.0,tf.float64))
-        attraction = tf.multiply(p, tf.math.log(num))
-        attraction = -tf.reduce_sum(attraction)
-
-        den = tf.reduce_sum(num, 1) - 1
-        repellant = tf.reduce_sum(tf.math.log(den))
-
-        #b=tf.constant(10.0,dtype=tf.float64)*(repellant + attraction) / tf.cast(n,tf.float64)
-        b=self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
-        #self.add_loss(b)
-        return z_mean, z_log_var, z, jacobian, b
-
-    def callv(self, inputs,training=None):
-
-        x=inputs
-        #x=tf.keras.backend.in_train_phase(layers.GaussianNoise(.1)(x),x,training=training)
-        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
-        nu = tf.constant(1.0, dtype=tf.float64)
-        n=tf.shape(inputs)[0]
-        # with tf.GradientTape() as g:
-        #     g.watch(inputs)
-        #x=inputs
-        for dl in self.dense_proj: x=dl(x)
-        z_mean = self.dense_mean(x)
-        z_log_var = self.dense_log_var(x)
-        z = z_mean
-        # jacobian=g.jacobian(z,inputs) ##computes jacobian, if frob=0. below, only consumes time
-        # frob=eta*(tf.norm(jacobian)**2)
-        # frob=0.
-        # self.add_loss(frob)
-        jacobian=0.
-        sum_y = tf.reduce_sum(tf.square(z), 1)
-        num = tf.constant(-2.0,tf.float64) * tf.matmul(z,
-                               z,
-                               transpose_b=True) + tf.reshape(sum_y, [-1, 1]) + sum_y
-        num = num / nu
-
-        p = p + tf.constant(0.1,tf.float64) / tf.cast(n,tf.float64)
-        p = p / tf.expand_dims(tf.reduce_sum(p, 1), 1)
-
-        num = tf.pow(tf.constant(1.0,tf.float64) + num, -(nu + tf.constant(1.0,tf.float64)) / tf.constant(2.0,tf.float64))
-        attraction = tf.multiply(p, tf.math.log(num))
-        attraction = -tf.reduce_sum(attraction)
-
-        den = tf.reduce_sum(num, 1) - 1
-        repellant = tf.reduce_sum(tf.math.log(den))
-
-        #b=tf.constant(10.0,dtype=tf.float64)*(repellant + attraction) / tf.cast(n,tf.float64)
-        b=self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
-        #self.add_loss(b)
-        return z_mean, z_log_var, z, jacobian, b
-
-
-    def callp(self,inputs):
-        x=inputs
-        for dl in self.dense_proj: x=dl(x)
-        z_mean = self.dense_mean(x)
-        #z_log_var = self.dense_log_var(x)
-        #z = self.sampling((z_mean, z_log_var))
-        return z_mean #, z_log_var, z_mean, 0.
-        
     def call(self,inputs,training=None):
-        z_mean, z_log_var, z, jacobian, b = K.in_train_phase(self.callt(inputs),self.callv(inputs), training=training) 
-        self.add_loss(b)
-        return z_mean, z_log_var, z, jacobian
+        x = inputs
+        for dl in self.dense_proj: x=dl(x)
+        return self.dense_mean(x), self.dense_log_var(x)    
 
 class Decoder(layers.Layer):
 
@@ -197,25 +103,46 @@ class Vaevictis(tf.keras.Model):
         self.alpha = alpha
         
         self.encoder = Encoder(latent_dim=latent_dim,
-                               encoder_shape=encoder_shape,perplexity=perplexity,alpha=alpha)
+                               encoder_shape=encoder_shape)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
+        self.sampling = Sampling()
 
     def call(self, inputs, training=None):
-        z_mean, z_log_var, z, _ = self.encoder(inputs,training=training)
-        reconstructed = self.decoder(z)
-        # Add KL divergence regularization loss.
+        z_mean, z_log_var = self.encoder(inputs,training=training)
+        
+        b=self.tsne_reg(inputs,z_mean)
+        self.add_loss(b)
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
         self.add_loss(kl_loss)
-        
+        z = self.sampling((z_mean, z_log_var))
+        reconstructed = self.decoder(z)
         return reconstructed
+        
+    def tsne_reg(self,x,z):
+        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
+        # p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
+        nu = tf.constant(1.0, dtype=tf.float64)
+        n=tf.shape(x)[0]
+        
+        sum_y = tf.reduce_sum(tf.square(z), 1)
+        num = tf.constant(-2.0,tf.float64) * tf.matmul(z,
+                               z,
+                               transpose_b=True) + tf.reshape(sum_y, [-1, 1]) + sum_y
+        num = num / nu
 
+        p = p + tf.constant(0.1,tf.float64) / tf.cast(n,tf.float64)
+        p = p / tf.expand_dims(tf.reduce_sum(p, 1), 1)
+
+        num = tf.pow(tf.constant(1.0,tf.float64) + num, -(nu + tf.constant(1.0,tf.float64)) / tf.constant(2.0,tf.float64))
+        attraction = tf.multiply(p, tf.math.log(num))
+        attraction = -tf.reduce_sum(attraction)
+
+        den = tf.reduce_sum(num, 1) - 1
+        repellant = tf.reduce_sum(tf.math.log(den))
+        return self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
+        
     def get_config(self):
-        #config = super(Vaevictis, self).get_config()
-        #config.update({'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
-        #    'decoder_shape': self.decoder_shape, 'latent_dim': self.latent_dim, 'perplexity': self.perplexity,
-        #    'alpha': self.alpha, 'name': self.name})
-        #return config
         return {'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
             'decoder_shape': self.decoder_shape, 'latent_dim': self.latent_dim, 'perplexity': self.perplexity,
             'alpha': self.alpha, 'name': self.name}
@@ -233,13 +160,14 @@ class Vaevictis(tf.keras.Model):
         
     def predict_np(self):
         def predict(data):
-           return self.encoder.callp(data).numpy()
+           return self.encoder(data)[0].numpy()
         return(predict)
 
 
 
 
-def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,save=None,load=None):
+def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
+perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,save=None,load=None):
 
 
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, alpha)
@@ -250,10 +178,10 @@ def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,1
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
 
-    
+
     vae.fit(x_train,x_train,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
 
-    # train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
+    # train_dataset = tf.data.Dataset.from_tensor_slices(x_train) ## eager debugging
     # @tf.function
     # def train_one_step(m1,optimizer,x):
     #     with tf.GradientTape() as tape:
@@ -261,30 +189,31 @@ def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,1
     #         reconstructed = m1(x)
     #         # Compute reconstruction loss
     #         loss = nll(x, reconstructed)
-
-    #         #loss += sum(m1.losses)  # Add KLD regularization loss
-
+    # 
+    #         loss += sum(m1.losses)  # Add KLD regularization loss
+    # 
     #     grads = tape.gradient(loss, m1.trainable_weights)
     #     optimizer.apply_gradients(zip(grads, m1.trainable_weights))
     #     return loss
-
-
-
-    # # Iterate over epochs.
+    # 
+    # 
+    # 
+    # # # Iterate over epochs.
     # def train():
     #     loss=0.
-    #     for epoch in range(10):
+    #     for epoch in range(epochs):
     #         print('Start of epoch %d' % (epoch,))
     #         for  x_batch_train in train_dataset.batch(128):
     #             loss=train_one_step(vae,optimizer,x_batch_train)
     #     return loss
-
+    # 
     # loss=train()
+   
     def predict(data):
-        return vae.encoder.callp(data).numpy()
+        return vae.encoder(data)[0].numpy()
     
     #vae.save("vae_model")
-    z_test = vae.encoder.callp(x_train)
+    z_test = vae.encoder(x_train)[0]
     z_test=z_test.numpy()
     return z_test, predict, vae, vae.get_config(), vae.get_weights()
     
