@@ -146,8 +146,8 @@ class Vaevictis(tf.keras.Model):
         self.ww = ww
         self.pn=pn_loss_builder(metric, margin)
         self.encoder = Encoder(latent_dim=latent_dim,
-                               encoder_shape=encoder_shape,drate=0.)
-        self.decoder = Decoder(original_dim, decoder_shape = decoder_shape, drate=0.)
+                               encoder_shape=encoder_shape,drate=0.1)
+        self.decoder = Decoder(original_dim, decoder_shape = decoder_shape, drate=0.1)
         self.sampling = Sampling()
         self.tsne_reg=tsne_reg_builder(ww,self.perplexity)
 
