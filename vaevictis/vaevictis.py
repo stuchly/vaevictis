@@ -25,10 +25,7 @@ def nll_builder(ww):
     
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
         
-    def nll_null(y_true, y_pred):
-        return tf.cast(0.,tf.float64)
-        
-    return nll if ww[2]<=0 else nll
+    return nll
 
 def tsne_reg_builder(ww,perplexity):
         
@@ -219,7 +216,7 @@ metric="euclidean",margin=1.,k=30):
     """
     
     triplets=input_compute(x_train,k)
-    #triplets=(x_train,x_train,x_train)
+    
     optimizer = tf.keras.optimizers.Adam()
     if ivis_pretrain>0:
         ww1=ww.copy()
