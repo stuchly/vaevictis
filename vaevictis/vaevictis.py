@@ -233,8 +233,9 @@ metric="euclidean",margin=1.):
     vae.compile(optimizer,loss=nll_f)
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
-    aux=vae((x_train[:10,],x_train[:10,],x_train[:10,])) # instantiate model
+    
     if ivis_pretrain>0:
+        aux=vae((x_train[:10,],x_train[:10,],x_train[:10,])) # instantiate model
         vae.set_weights(pre_weight)
 
     vae.fit(triplets,triplets[0],batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
