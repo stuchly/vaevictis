@@ -50,7 +50,7 @@ def tsne_reg_build(ww):
             repellant = tf.reduce_sum(tf.math.log(den))
             return (repellant + attraction) / tf.cast(n,tf.float64)
             
-        def null_reg(self,x,z):
+        def null_reg(x,z):
             return 0.
         
         return null_reg if ww[0]<=0 else tsne_reg
