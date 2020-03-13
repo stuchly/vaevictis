@@ -25,6 +25,36 @@ def nll_build(ww):
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
     return nll
 
+def tsne_reg_build(ww):
+        
+        def tsne_reg(self,x,z):
+            p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
+            # p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
+            nu = tf.constant(1.0, dtype=tf.float64)
+            n=tf.shape(x)[0]
+        
+            sum_y = tf.reduce_sum(tf.square(z), 1)
+            num = tf.constant(-2.0,tf.float64) * tf.matmul(z,
+                               z,
+                               transpose_b=True) + tf.reshape(sum_y, [-1, 1]) + sum_y
+            num = num / nu
+
+            p = p + tf.constant(0.1,tf.float64) / tf.cast(n,tf.float64)
+            p = p / tf.expand_dims(tf.reduce_sum(p, 1), 1)
+
+            num = tf.pow(tf.constant(1.0,tf.float64) + num, -(nu + tf.constant(1.0,tf.float64)) / tf.constant(2.0,tf.float64))
+            attraction = tf.multiply(p, tf.math.log(num))
+            attraction = -tf.reduce_sum(attraction)
+
+            den = tf.reduce_sum(num, 1) - 1
+            repellant = tf.reduce_sum(tf.math.log(den))
+            return (repellant + attraction) / tf.cast(n,tf.float64)
+            
+        def null_reg(self,x,z):
+            return 0.
+        
+        return null_reg if ww[0]<=0 else tsne_reg
+
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z"""
 
@@ -118,6 +148,7 @@ class Vaevictis(tf.keras.Model):
                                encoder_shape=encoder_shape)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
         self.sampling = Sampling()
+        self.tsne_reg=tsne_reg_build(ww)
 
     def call(self, inputs, training=None):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
@@ -133,29 +164,6 @@ class Vaevictis(tf.keras.Model):
         z = self.sampling((z_mean, z_log_var))
         reconstructed = self.decoder(z)
         return reconstructed
-        
-    def tsne_reg(self,x,z):
-        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
-        # p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
-        nu = tf.constant(1.0, dtype=tf.float64)
-        n=tf.shape(x)[0]
-        
-        sum_y = tf.reduce_sum(tf.square(z), 1)
-        num = tf.constant(-2.0,tf.float64) * tf.matmul(z,
-                               z,
-                               transpose_b=True) + tf.reshape(sum_y, [-1, 1]) + sum_y
-        num = num / nu
-
-        p = p + tf.constant(0.1,tf.float64) / tf.cast(n,tf.float64)
-        p = p / tf.expand_dims(tf.reduce_sum(p, 1), 1)
-
-        num = tf.pow(tf.constant(1.0,tf.float64) + num, -(nu + tf.constant(1.0,tf.float64)) / tf.constant(2.0,tf.float64))
-        attraction = tf.multiply(p, tf.math.log(num))
-        attraction = -tf.reduce_sum(attraction)
-
-        den = tf.reduce_sum(num, 1) - 1
-        repellant = tf.reduce_sum(tf.math.log(den))
-        return (repellant + attraction) / tf.cast(n,tf.float64)
         
     def get_config(self):
         return {'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
@@ -184,27 +192,25 @@ class Vaevictis(tf.keras.Model):
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
 perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,10.,1.],
 metric="euclidean",margin=1.):
-"""
-Wrapper for model build and training
 
-Parameters
-----------
-x_train : array, shape (n_samples, n_dims)
-          Data to embedd, training dataset
-dim : integer, embedding_dim
-vsplit : float, proportion of data used at validation step - splitted befor shuffling!
-enc_shape : list of integers, shape of the encoder i.e. [128, 128, 128] means 3 dense layers with 128 neurons
-dec_shape : list of integers, shape of the decoder
-perplexity : float, perplexity parameter for tsne regularisation
-batch_size : integer, batch size
-epochs : integer, maximum number of epochs
-patience : integer, callback patience
-ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
-ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error; 
-everything is computed even with zero weight - to be optimised
-"""
+    """Wrapper for model build and training
+
+    Parameters
+    ----------
+    x_train : array, shape (n_samples, n_dims)
+              Data to embedd, training dataset
+    dim : integer, embedding_dim
+    vsplit : float, proportion of data used at validation step - splitted befor shuffling!
+    enc_shape : list of integers, shape of the encoder i.e. [128, 128, 128] means 3 dense layers with 128 neurons
+    dec_shape : list of integers, shape of the decoder
+    perplexity : float, perplexity parameter for tsne regularisation
+    batch_size : integer, batch size
+    epochs : integer, maximum number of epochs
+    patience : integer, callback patience
+    ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
+    ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error
+    """
     
-
     triplets=input_compute(x_train)
     #triplets=(x_train,x_train,x_train)
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
