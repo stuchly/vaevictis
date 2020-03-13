@@ -92,9 +92,9 @@ class Vaevictis(tf.keras.Model):
                  decoder_shape=[32,32],
                  latent_dim=32,
                  perplexity=10.,
-                 alpha=10.,
                  metric="euclidean",
                  margin=1.,
+                 ww=[10.,1.],
                  name='Vaevictis',
                  **kwargs):
         super(Vaevictis, self).__init__(name=name, **kwargs)
@@ -103,7 +103,7 @@ class Vaevictis(tf.keras.Model):
         self.decoder_shape = decoder_shape
         self.latent_dim = latent_dim
         self.perplexity = perplexity
-        self.alpha = alpha
+        self.ww = ww
         self.pn=pn_loss_builder(metric, margin)
         self.encoder = Encoder(latent_dim=latent_dim,
                                encoder_shape=encoder_shape)
@@ -115,7 +115,7 @@ class Vaevictis(tf.keras.Model):
         anch, _ =self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
         pnl=self.pn((z_mean,anch,neg))
-        self.add_loss(pnl)
+        self.add_loss(self.ww[1]*pnl)
         b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(b)
         kl_loss = - 0.5 * tf.reduce_mean(
@@ -146,12 +146,12 @@ class Vaevictis(tf.keras.Model):
 
         den = tf.reduce_sum(num, 1) - 1
         repellant = tf.reduce_sum(tf.math.log(den))
-        return self.alpha*(repellant + attraction) / tf.cast(n,tf.float64)
+        return self.ww[0]*(repellant + attraction) / tf.cast(n,tf.float64)
         
     def get_config(self):
         return {'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
-            'decoder_shape': self.decoder_shape, 'latent_dim': self.latent_dim, 'perplexity': self.perplexity,
-            'alpha': self.alpha, 'name': self.name}
+            'decoder_shape': self.decoder_shape, 'latent_dim': self.latent_dim, 'perplexity': self.perplexity, 'metric': self.metric,
+            'margin': self.margin,'ww': self.ww, 'name': self.name}
     
     def save(self, config_file, weights_file):
         
@@ -173,11 +173,12 @@ class Vaevictis(tf.keras.Model):
 
 
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
-perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,ivis_pretrain=0,ww=[1.,1.]):
+perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,1.],
+metric=euclidean,margin=1.):
 
     triplets=input_compute(x_train)
     #triplets=(x_train,x_train,x_train)
-    vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, alpha)
+    vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
 
     optimizer = tf.keras.optimizers.Adam()
     mse_loss_fn = nll
@@ -226,7 +227,8 @@ perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,ivis_pretrain=0,ww
 def loadModel(config_file,weights_file):
     config = json.load(open(config_file))
     new_model=Vaevictis(config["original_dim"], config["encoder_shape"],
-    config["decoder_shape"], config["latent_dim"], config["perplexity"], config["alpha"])
+    config["decoder_shape"], config["latent_dim"], config["perplexity"], 
+    config["metric"], config["margin"], config["ww"])
     
     optimizer = tf.keras.optimizers.Adam()
     mse_loss_fn = nll
