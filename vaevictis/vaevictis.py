@@ -216,7 +216,7 @@ metric="euclidean",margin=1.):
     #triplets=(x_train,x_train,x_train)
     optimizer = tf.keras.optimizers.Adam()
     if ivis_pretrain>0:
-        ww1=ww
+        ww1=ww.copy()
         ww1[0]=-1.
         print(ww1)
         vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww1)
