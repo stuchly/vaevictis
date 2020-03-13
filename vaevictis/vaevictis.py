@@ -23,7 +23,10 @@ def nll_builder(ww):
         """ loss """
     
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
-    return nll
+    def nll_null(y_true, y_pred)
+        return 0.
+        
+    return nll_null if ww[2]<=0 else nll
 
 def tsne_reg_builder(ww,perplexity):
         
@@ -153,9 +156,9 @@ class Vaevictis(tf.keras.Model):
 
     def call(self, inputs, training=None):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
-        anch, _ = self.encoder(inputs[1],training=training)
+        pos, _ = self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
-        pnl=self.pn((z_mean,anch,neg))
+        pnl=self.pn((z_mean,pos,neg))
         self.add_loss(self.ww[1]*pnl)
         b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(self.ww[0]*b)
@@ -192,7 +195,7 @@ class Vaevictis(tf.keras.Model):
 
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
 perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,10.,1.],
-metric="euclidean",margin=1.):
+metric="euclidean",margin=1.,k=30):
 
     """Wrapper for model build and training
 
@@ -210,9 +213,10 @@ metric="euclidean",margin=1.):
     patience : integer, callback patience
     ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
     ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error, KL divergence
+    k : integer, number of nearest neighbors
     """
     
-    triplets=input_compute(x_train)
+    triplets=input_compute(x_train,k)
     #triplets=(x_train,x_train,x_train)
     optimizer = tf.keras.optimizers.Adam()
     if ivis_pretrain>0:
