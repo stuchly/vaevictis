@@ -17,7 +17,7 @@ def nll_build(ww):
     def nll(y_true, y_pred):
         """ loss """
     
-        return ww[2]*tf.reduce_mean((y_true[0]-y_pred[0])**2)
+        return tf.constant(ww[2])*tf.reduce_mean((y_true-y_pred)**2)
     return nll
 
 class Sampling(layers.Layer):
