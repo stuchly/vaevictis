@@ -18,6 +18,7 @@ def nll_build(ww):
         """ loss """
     
         return ww[2]*tf.reduce_mean((y_true[0]-y_pred[0])**2)
+    return nll
 
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z"""
