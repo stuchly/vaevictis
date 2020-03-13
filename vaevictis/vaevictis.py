@@ -126,8 +126,8 @@ class Vaevictis(tf.keras.Model):
         return reconstructed
         
     def tsne_reg(self,x,z):
-        # p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
-        p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
+        p=tf.numpy_function(compute_transition_probability,[x,self.perplexity, 1e-4, 50,False],tf.float64)
+        # p=compute_transition_probability(x.numpy(),self.perplexity, 1e-4, 50,False) ## for eager dubugging
         nu = tf.constant(1.0, dtype=tf.float64)
         n=tf.shape(x)[0]
         
@@ -180,41 +180,41 @@ perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,save=None,load=Non
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, alpha)
 
     optimizer = tf.keras.optimizers.Adam()
-    # mse_loss_fn = nll
-    # vae.compile(optimizer,loss=nll)
-    # 
-    # es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
-    # 
-    # 
-    # vae.fit(triplets,triplets,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
+    mse_loss_fn = nll
+    vae.compile(optimizer,loss=nll)
 
-    train_dataset = tf.data.Dataset.from_tensor_slices(triplets) ## eager debugging
+    es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
+
+
+    vae.fit(triplets,triplets,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
+
+    # train_dataset = tf.data.Dataset.from_tensor_slices(triplets) ## eager debugging
     #@tf.function
-    def train_one_step(m1,optimizer,x):
-        with tf.GradientTape() as tape:
-            tape.watch(m1.trainable_weights)
-            reconstructed = m1(x)
-            # Compute reconstruction loss
-            loss = nll(x, reconstructed)
-
-            loss += sum(m1.losses)  # Add KLD regularization loss
-
-        grads = tape.gradient(loss, m1.trainable_weights)
-        optimizer.apply_gradients(zip(grads, m1.trainable_weights))
-        return loss
+    # def train_one_step(m1,optimizer,x):
+    #     with tf.GradientTape() as tape:
+    #         tape.watch(m1.trainable_weights)
+    #         reconstructed = m1(x)
+    #         # Compute reconstruction loss
+    #         loss = nll(x, reconstructed)
+    # 
+    #         loss += sum(m1.losses)  # Add KLD regularization loss
+    # 
+    #     grads = tape.gradient(loss, m1.trainable_weights)
+    #     optimizer.apply_gradients(zip(grads, m1.trainable_weights))
+    #     return loss
     #
     #
     #
     # # # Iterate over epochs.
-    def train():
-        loss=0.
-        for epoch in range(epochs):
-            print('Start of epoch %d' % (epoch,))
-            for  x_batch_train in train_dataset.batch(128):
-                loss=train_one_step(vae,optimizer,x_batch_train)
-        return loss
-
-    loss=train()
+    # def train():
+    #     loss=0.
+    #     for epoch in range(epochs):
+    #         print('Start of epoch %d' % (epoch,))
+    #         for  x_batch_train in train_dataset.batch(128):
+    #             loss=train_one_step(vae,optimizer,x_batch_train)
+    #     return loss
+    # 
+    # loss=train()
 
     def predict(data):
         return vae.encoder(data)[0].numpy()
