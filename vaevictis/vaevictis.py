@@ -96,7 +96,7 @@ class Vaevictis(tf.keras.Model):
                  perplexity=10.,
                  metric="euclidean",
                  margin=1.,
-                 ww=[10.,1.],
+                 ww=[10.,1.,1.],
                  name='Vaevictis',
                  **kwargs):
         super(Vaevictis, self).__init__(name=name, **kwargs)
@@ -116,10 +116,10 @@ class Vaevictis(tf.keras.Model):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
         anch, _ =self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
-        pnl=self.pn((z_mean,anch,neg))
-        self.add_loss(self.ww[1]*pnl)
-        b=self.tsne_reg(inputs[0],z_mean)
-        self.add_loss(self.ww[0]*b)
+        pnl=self.ww[1]*self.pn((z_mean,anch,neg))
+        self.add_loss(pnl)
+        b=self.ww[0]*self.tsne_reg(inputs[0],z_mean)
+        self.add_loss(b)
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
         self.add_loss(kl_loss)
