@@ -16,7 +16,7 @@ eta=tf.constant(1e-4,dtype=tf.float64)
 def nll(y_true, y_pred):
     """ loss """
     
-    return tf.reduce_mean((y_true-y_pred)**2)
+    return tf.reduce_mean((y_true[0]-y_pred[0])**2)
 
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z"""
@@ -109,9 +109,9 @@ class Vaevictis(tf.keras.Model):
         self.sampling = Sampling()
 
     def call(self, inputs, training=None):
-        z_mean, z_log_var = self.encoder(inputs,training=training)
+        z_mean, z_log_var = self.encoder(inputs[0],training=training)
         
-        b=self.tsne_reg(inputs,z_mean)
+        b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(b)
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
@@ -170,7 +170,8 @@ class Vaevictis(tf.keras.Model):
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
 perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,save=None,load=None):
 
-    tet=input_compute(x_train)
+    triplets=input_compute(x_train)
+    
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, alpha)
 
     optimizer = tf.keras.optimizers.Adam()
@@ -180,7 +181,7 @@ perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10.,save=None,load=Non
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
 
 
-    vae.fit(x_train,x_train,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
+    vae.fit(triplets,triplets,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
 
     # train_dataset = tf.data.Dataset.from_tensor_slices(x_train) ## eager debugging
     # @tf.function
