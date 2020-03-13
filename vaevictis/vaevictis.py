@@ -93,7 +93,7 @@ class Encoder(layers.Layer):
 
     def call(self,inputs,training=None):
         x = inputs
-        for dl in self.dense_proj: x=self.alphadrop(dl(x))
+        for dl in self.dense_proj: x=dl(x)
         return self.dense_mean(x), self.dense_log_var(x)    
 
 class Decoder(layers.Layer):
@@ -117,7 +117,7 @@ class Decoder(layers.Layer):
         self.dense_output = layers.Dense(original_dim) #,kernel_regularizer=l1_l2(l1=0.001, l2=0.001))
     def call(self, inputs, training=None):
         x = inputs
-        for dl in self.dense_proj: x=self.alphadrop(dl(x))
+        for dl in self.dense_proj: x=dl(x)
         return self.dense_output(x)
 
 
@@ -153,7 +153,7 @@ class Vaevictis(tf.keras.Model):
 
     def call(self, inputs, training=None):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
-        anch, _ =self.encoder(inputs[1],training=training)
+        anch, _ = self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
         pnl=self.pn((z_mean,anch,neg))
         self.add_loss(self.ww[1]*pnl)
