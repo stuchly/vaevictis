@@ -4,7 +4,8 @@ import sys
 
 
 from .knn_annoy import build_annoy_index, extract_knn
-
+import tensorflow as tf
+import tensorflow.keras.backend as K
 
 
 
@@ -20,7 +21,7 @@ def input_compute(x,k=16): #x représente un dataset
   negative = np.empty(np.shape(x))
 
   for i, clust in enumerate(knn_matrix):
-    positive[i,:] = x[tf.cast(random.choice(clust),dtype="uint32"),:]
+    positive[i,:] = x[random.choice(clust),:]
     negative[i,:] = x[random.choice(knn_matrix[:,0]),:]
 
   inputs = [x,positive,negative]
