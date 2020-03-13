@@ -9,6 +9,7 @@ import os
 import json
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 K.set_floatx('float64')
+
 eps_std=tf.constant(1e-2,dtype=tf.float64)
 eps_sq=eps_std**2
 eta=tf.constant(1e-4,dtype=tf.float64)
@@ -25,7 +26,7 @@ def nll_builder(ww):
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
         
     def nll_null(y_true, y_pred):
-        return 0.
+        return tf.cast(0.,tf.float64)
         
     return nll_null if ww[2]<=0 else nll
 
