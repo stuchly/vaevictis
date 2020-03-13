@@ -17,7 +17,6 @@ def input_compute(x,k=16): #x représente un dataset
 
   build_annoy_index(x,"ind",build_index_on_disk=True)
   knn_matrix = extract_knn(x,"ind")
-  print(knn_matrix)
   positive = np.empty(np.shape(x))
   negative = np.empty(np.shape(x))
 
