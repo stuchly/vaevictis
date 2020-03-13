@@ -12,11 +12,12 @@ K.set_floatx('float64')
 eps_std=tf.constant(1e-2,dtype=tf.float64)
 eps_sq=eps_std**2
 eta=tf.constant(1e-4,dtype=tf.float64)
-
-def nll(y_true, y_pred):
-    """ loss """
+def nll_build(ww):
     
-    return tf.reduce_mean((y_true[0]-y_pred[0])**2)
+    def nll(y_true, y_pred):
+        """ loss """
+    
+        return ww[2]*tf.reduce_mean((y_true[0]-y_pred[0])**2)
 
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z"""
@@ -181,8 +182,8 @@ metric="euclidean",margin=1.):
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
 
     optimizer = tf.keras.optimizers.Adam()
-    
-    vae.compile(optimizer,loss=ww[2]*nll)
+    nll_f=nll_build(ww)
+    vae.compile(optimizer,loss=nll_f)
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
 
@@ -231,8 +232,8 @@ def loadModel(config_file,weights_file):
     config["metric"], config["margin"], config["ww"])
     
     optimizer = tf.keras.optimizers.Adam()
-    
-    new_model.compile(optimizer,loss=config["ww"][2]*nll)
+    nll_f=nll_build(config["ww"])
+    new_model.compile(optimizer,loss=nll_f)
     x=np.random.rand(10,config["original_dim"])
     new_model.train_on_batch(x,x)
     new_model.load_weights(weights_file)
