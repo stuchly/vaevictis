@@ -110,6 +110,8 @@ class Vaevictis(tf.keras.Model):
         self.decoder_shape = decoder_shape
         self.latent_dim = latent_dim
         self.perplexity = perplexity
+        self.metric=metric
+        self.margin=margin
         self.ww = ww
         self.pn=pn_loss_builder(metric, margin)
         self.encoder = Encoder(latent_dim=latent_dim,
