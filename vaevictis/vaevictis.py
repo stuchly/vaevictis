@@ -109,6 +109,7 @@ class Decoder(layers.Layer):
         super(Decoder, self).__init__(name=name, **kwargs)
         self.decoder_shape=decoder_shape
         self.drop=layers.Dropout(rate=drate)
+        self.alphadrop=layers.AlphaDropout(rate=drate)
         self.dense_proj = [None]*len(decoder_shape)
         for i,v in enumerate(self.decoder_shape):
             self.dense_proj[i]=layers.Dense(v,activation=activation)
@@ -116,7 +117,7 @@ class Decoder(layers.Layer):
         self.dense_output = layers.Dense(original_dim) #,kernel_regularizer=l1_l2(l1=0.001, l2=0.001))
     def call(self, inputs, training=None):
         x = inputs
-        for dl in self.dense_proj: x=dl(x)
+        for dl in self.dense_proj: x=self.alphadrop(dl(x))
         return self.dense_output(x)
 
 
@@ -213,9 +214,21 @@ metric="euclidean",margin=1.):
     
     triplets=input_compute(x_train)
     #triplets=(x_train,x_train,x_train)
-    vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
-
     optimizer = tf.keras.optimizers.Adam()
+    if ivis_pretrain>0:
+        ww1=ww
+        ww1[0]=-1.
+        vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww1)
+        nll_f=nll_builder(ww)
+        vae.compile(optimizer,loss=nll_f)
+        vae.fit(triplets,triplets[0],batch_size=batch_size,epochs=ivis_pretrain,validation_split=vsplit,shuffle=True)
+        pre_weight=vae.get_weights()
+        
+    vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
+    
+    if ivis_pretrain>0:
+        vae.set_weights(pre_weight)
+    
     nll_f=nll_builder(ww)
     vae.compile(optimizer,loss=nll_f)
 
