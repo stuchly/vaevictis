@@ -12,6 +12,11 @@ K.set_floatx('float64')
 eps_std=tf.constant(1e-2,dtype=tf.float64)
 eps_sq=eps_std**2
 eta=tf.constant(1e-4,dtype=tf.float64)
+def nll(y_true, y_pred):
+    """ loss """
+    
+    return tf.reduce_mean((y_true-y_pred)**2)
+    
 def nll_build(ww):
     
     def nll(y_true, y_pred):
@@ -184,7 +189,7 @@ metric="euclidean",margin=1.):
 
     optimizer = tf.keras.optimizers.Adam()
     nll_f=nll_build(ww)
-    vae.compile(optimizer,loss=nll_f)
+    vae.compile(optimizer,loss=nll)
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
 
