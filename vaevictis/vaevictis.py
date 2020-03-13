@@ -28,7 +28,7 @@ def nll_builder(ww):
     def nll_null(y_true, y_pred):
         return tf.cast(0.,tf.float64)
         
-    return nll_null if ww[2]<=0 else nll
+    return nll if ww[2]<=0 else nll
 
 def tsne_reg_builder(ww,perplexity):
         
