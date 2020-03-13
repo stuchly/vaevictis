@@ -226,14 +226,14 @@ metric="euclidean",margin=1.):
         
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
     
-    if ivis_pretrain>0:
-        vae.set_weights(pre_weight)
+   
     
     nll_f=nll_builder(ww)
     vae.compile(optimizer,loss=nll_f)
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
-
+    if ivis_pretrain>0:
+        vae.set_weights(pre_weight)
 
     vae.fit(triplets,triplets[0],batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,shuffle=True)
 
