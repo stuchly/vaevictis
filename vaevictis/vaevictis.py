@@ -173,7 +173,7 @@ class Vaevictis(tf.keras.Model):
 
 
 def dimred(x_train,dim=2,vsplit=0.1,enc_shape=[128,128,128],dec_shape=[128,128,128],
-perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,1.],
+perplexity=10.,batch_size=512,epochs=100,patience=0,ivis_pretrain=0,ww=[10.,1.,1.],
 metric=euclidean,margin=1.):
 
     triplets=input_compute(x_train)
@@ -181,8 +181,8 @@ metric=euclidean,margin=1.):
     vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww)
 
     optimizer = tf.keras.optimizers.Adam()
-    mse_loss_fn = nll
-    vae.compile(optimizer,loss=nll)
+    
+    vae.compile(optimizer,loss=ww[2]*nll)
 
     es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
 
@@ -231,8 +231,8 @@ def loadModel(config_file,weights_file):
     config["metric"], config["margin"], config["ww"])
     
     optimizer = tf.keras.optimizers.Adam()
-    mse_loss_fn = nll
-    new_model.compile(optimizer,loss=nll)
+    
+    new_model.compile(optimizer,loss=config["ww"][2]*nll)
     x=np.random.rand(10,config["original_dim"])
     new_model.train_on_batch(x,x)
     new_model.load_weights(weights_file)
