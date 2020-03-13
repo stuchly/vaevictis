@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
-from tsne_helper_njit import compute_transition_probability
+from .tsne_helper_njit import compute_transition_probability
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 import json
