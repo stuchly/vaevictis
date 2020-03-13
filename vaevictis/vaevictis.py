@@ -23,7 +23,8 @@ def nll_builder(ww):
         """ loss """
     
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
-    def nll_null(y_true, y_pred)
+        
+    def nll_null(y_true, y_pred):
         return 0.
         
     return nll_null if ww[2]<=0 else nll
