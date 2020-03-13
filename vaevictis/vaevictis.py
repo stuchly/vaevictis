@@ -101,7 +101,7 @@ class Decoder(layers.Layer):
     def __init__(self,
                  original_dim,
                 # encoder,
-                 activation="relu",
+                 activation="selu",
                  drate=0.1,
                  decoder_shape=[32,32],
                  name='decoder',
@@ -146,8 +146,8 @@ class Vaevictis(tf.keras.Model):
         self.ww = ww
         self.pn=pn_loss_builder(metric, margin)
         self.encoder = Encoder(latent_dim=latent_dim,
-                               encoder_shape=encoder_shape)
-        self.decoder = Decoder(original_dim, decoder_shape = decoder_shape)
+                               encoder_shape=encoder_shape,drate=0.)
+        self.decoder = Decoder(original_dim, decoder_shape = decoder_shape, drate=0.)
         self.sampling = Sampling()
         self.tsne_reg=tsne_reg_builder(ww,self.perplexity)
 
