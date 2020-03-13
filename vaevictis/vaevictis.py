@@ -218,6 +218,7 @@ metric="euclidean",margin=1.):
     if ivis_pretrain>0:
         ww1=ww
         ww1[0]=-1.
+        print(ww1)
         vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww1)
         nll_f=nll_builder(ww1)
         vae.compile(optimizer,loss=nll_f)
