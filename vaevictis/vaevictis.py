@@ -25,7 +25,7 @@ def nll_builder(ww):
     
         return ww[2]*tf.reduce_mean((y_true-y_pred)**2)
     def nll_null(y_true, y_pred):
-        return 0.
+        return tf.cast(0.,tf.float64)
         
     return nll if ww[2]>0. else nll_null
 
@@ -76,7 +76,7 @@ class Encoder(layers.Layer):
                  drate=0.1,
                  encoder_shape=[32,32],
                  latent_dim=32,
-                 activation="selu",
+                 activation="relu",
                  name='encoder',
                  dynamic=True,
                  **kwargs):
@@ -86,7 +86,7 @@ class Encoder(layers.Layer):
 
         super(Encoder, self).__init__(name=name, **kwargs)
         self.encoder_shape=encoder_shape
-        # self.drop0=layers.Dropout(rate=0.2)
+        self.drop0=layers.Dropout(rate=drate)
         self.alphadrop=layers.AlphaDropout(rate=drate)
         self.dense_proj = [None]*len(encoder_shape)
         for i,v in enumerate(self.encoder_shape):
@@ -97,7 +97,7 @@ class Encoder(layers.Layer):
 
     def call(self,inputs,training=None):
         x = inputs
-        for dl in self.dense_proj: x=self.alphadrop(dl(x))
+        for dl in self.dense_proj: x=self.drop0(dl(x))
         return self.dense_mean(x), self.dense_log_var(x)    
 
 class Decoder(layers.Layer):
@@ -105,7 +105,7 @@ class Decoder(layers.Layer):
     def __init__(self,
                  original_dim,
                 # encoder,
-                 activation="selu",
+                 activation="relu",
                  drate=0.1,
                  decoder_shape=[32,32],
                  name='decoder',
@@ -156,11 +156,12 @@ class Vaevictis(tf.keras.Model):
         self.tsne_reg=tsne_reg_builder(ww,self.perplexity)
         self.nll=nll_builder(ww)
         
+
     def call(self, inputs, training=None):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
         pos, _ = self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
-        pnl=self.pn((z_mean,pos,neg))
+        pnl=pn_loss((z_mean,pos,neg))
         self.add_loss(self.ww[1]*pnl)
         b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(self.ww[0]*b)
@@ -168,7 +169,7 @@ class Vaevictis(tf.keras.Model):
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
         self.add_loss(self.ww[3]*kl_loss)
         z = self.sampling((z_mean, z_log_var))
-        reconstructed = self.decoder(z)
+        reconstructed = self.decoder(z,training=training)
         # rls=self.nll(inputs[1],reconstructed)
         # self.add_loss(self.ww[2]*rls)
         return reconstructed
