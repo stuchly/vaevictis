@@ -13,11 +13,7 @@ K.set_floatx('float64')
 eps_std=tf.constant(1e-2,dtype=tf.float64)
 eps_sq=eps_std**2
 eta=tf.constant(1e-4,dtype=tf.float64)
-def nll(y_true, y_pred):
-    """ loss """
-    
-    return tf.reduce_mean((y_true-y_pred)**2)
-    
+
 def nll_builder(ww):
     
     def nll(y_true, y_pred):
@@ -148,7 +144,7 @@ class Vaevictis(tf.keras.Model):
         self.metric=metric
         self.margin=margin
         self.ww = ww
-        self.pn=pn_loss ## something wrong here - builder does not work
+        self.pn=pn_loss_builder(distance=metric, margin=margin) ## something wrong here - builder does not work
         self.encoder = Encoder(latent_dim=latent_dim,
                                encoder_shape=encoder_shape,drate=0.2)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape, drate=0.1)
@@ -163,11 +159,14 @@ class Vaevictis(tf.keras.Model):
         neg, _ = self.encoder(inputs[2],training=training)
         pnl=pn_loss((z_mean,pos,neg))
         self.add_loss(self.ww[1]*pnl)
+        # self.add_metric(self.ww[1]*pnl,name="pnl")
         b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(self.ww[0]*b)
+        
         kl_loss = - 0.5 * tf.reduce_mean(
             z_log_var + tf.math.log(eps_sq)- tf.square(z_mean) - eps_sq*tf.exp(z_log_var))
         self.add_loss(self.ww[3]*kl_loss)
+        
         z = self.sampling((z_mean, z_log_var))
         reconstructed = self.decoder(z,training=training)
         # rls=self.nll(inputs[1],reconstructed)
@@ -216,7 +215,7 @@ metric="euclidean",margin=1.,k=30,knn=None):
     batch_size : integer, batch size
     epochs : integer, maximum number of epochs
     patience : integer, callback patience
-    ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
+    ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining
     ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error, KL divergence
     k : integer, number of nearest neighbors
     knn : integer array, precomputed knn matrix
@@ -228,7 +227,6 @@ metric="euclidean",margin=1.,k=30,knn=None):
     if ivis_pretrain>0:
         ww1=ww.copy()
         ww1[0]=-1.
-        ##ww1[1]=np.maximum(ww1[1],1.)
         vae = Vaevictis(x_train.shape[1], enc_shape,dec_shape, dim, perplexity, metric, margin, ww1)
         nll_f=nll_builder(ww1)
         vae.compile(optimizer,loss=nll_f)
