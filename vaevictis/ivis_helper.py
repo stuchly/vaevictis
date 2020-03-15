@@ -34,6 +34,19 @@ def input_compute(x,k=16,knn_matrix=None): #x représente un dataset
 #Fonction de coût/Loss function
 #####
 
+def _euclidean_distance(x, y):
+    return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
+
+
+def pn_loss(y_pred):    
+  anchor, positive, negative = y_pred
+  anchor_positive_distance = _euclidean_distance(anchor, positive)
+  anchor_negative_distance = _euclidean_distance(anchor, negative)
+  positive_negative_distance = _euclidean_distance(positive, negative)
+
+  minimum_distance = K.min(K.concatenate([anchor_negative_distance, positive_negative_distance]), axis=1, keepdims=True)
+
+  return K.mean(K.maximum(anchor_positive_distance - minimum_distance + 1., 0))
 
 def euclidean_distance(x, y):
   return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), tf.cast(K.epsilon(),dtype="float64")))
