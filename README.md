@@ -1,4 +1,6 @@
-# Vaevictis
+# Vaevictis - this is a playground!!
+
+This is a playground - master could be broken at any moment, use specific commit for instalation (see below)
 
 Experimental combination of various ideas for dimensional reduction nad manifold analysis
 
