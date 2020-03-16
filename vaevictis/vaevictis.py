@@ -3,7 +3,7 @@ import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
 from .tsne_helper_njit import compute_transition_probability
-from .ivis_helper import input_compute, pn_loss_builder, pn_loss
+from .ivis_helper import input_compute, pn_loss_g, euclidean_distance, cosine_distance
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 import json
@@ -145,10 +145,10 @@ class Vaevictis(tf.keras.Model):
         self.decoder_shape = decoder_shape
         self.latent_dim = latent_dim
         self.perplexity = perplexity
-        self.metric=metric
-        self.margin=margin
+        self.metric = metric
+        self.distance = euclidean_distance if metric=="euclidean" else cosine_distance 
+        self.margin = margin
         self.ww = ww
-        self.pn=pn_loss ## something wrong here - builder does not work
         self.encoder = Encoder(latent_dim=latent_dim,
                                encoder_shape=encoder_shape,drate=0.2)
         self.decoder = Decoder(original_dim, decoder_shape = decoder_shape, drate=0.1)
@@ -161,7 +161,7 @@ class Vaevictis(tf.keras.Model):
         z_mean, z_log_var = self.encoder(inputs[0],training=training)
         pos, _ = self.encoder(inputs[1],training=training)
         neg, _ = self.encoder(inputs[2],training=training)
-        pnl=pn_loss((z_mean,pos,neg))
+        pnl=pn_loss_g((z_mean,pos,neg),self.distance, self.margin)
         self.add_loss(self.ww[1]*pnl)
         b=self.tsne_reg(inputs[0],z_mean)
         self.add_loss(self.ww[0]*b)
@@ -185,10 +185,11 @@ class Vaevictis(tf.keras.Model):
         json.dump(json_config, open(config_file,'w'))
         self.save_weights(weights_file)
     
-    def refit(self,x_train,perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10,vsplit=0.1):
+    def refit(self,x_train,perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10,vsplit=0.1,k=30,knn=None):
+        triplets=input_compute(x_train,k,self.metric,knn)
         es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
-        self.fit(x_train,x_train,batch_size=batch_size,epochs=epochs,callbacks=[es],validation_split=vsplit,
-        shuffle=True)
+        self.fit(triplets,triplets[0],batch_size=batch_size,epochs=epochs,callbacks=[es],
+        validation_split=vsplit,shuffle=True)
         
     def predict_np(self):
         def predict(data):
@@ -216,13 +217,13 @@ metric="euclidean",margin=1.,k=30,knn=None):
     batch_size : integer, batch size
     epochs : integer, maximum number of epochs
     patience : integer, callback patience
-    ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining; not yet implemented
+    ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining
     ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error, KL divergence
     k : integer, number of nearest neighbors
     knn : integer array, precomputed knn matrix
     """
     
-    triplets=input_compute(x_train,k,knn)
+    triplets=input_compute(x_train,k,metric,knn)
     
     optimizer = tf.keras.optimizers.Adam()
     if ivis_pretrain>0:

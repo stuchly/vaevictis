@@ -52,7 +52,7 @@ def build_annoy_index(X, path, ntrees=50, build_index_on_disk=True, metric="eucl
         return index
 
 
-def extract_knn(X, index_filepath, k=50, search_k=-1, verbose=1):
+def extract_knn(X, index_filepath, k=50, search_k=-1, verbose=1,metric="euclidean"):
     """ Starts multiple processes to retrieve nearest neighbours using
         an Annoy Index in parallel """
 
@@ -67,11 +67,11 @@ def extract_knn(X, index_filepath, k=50, search_k=-1, verbose=1):
     i = 0
     while (i + chunk_size) <= X.shape[0]:
         process_pool.append(KNN_Worker(index_filepath, k, search_k, n_dims,
-                                       (i, i+chunk_size), results_queue))
+                                       (i, i+chunk_size), results_queue, metric))
         i += chunk_size
     if remainder:
         process_pool.append(KNN_Worker(index_filepath, k, search_k, n_dims,
-                                       (i, X.shape[0]), results_queue))
+                                       (i, X.shape[0]), results_queue, metric))
 
     try:
         for process in process_pool:
