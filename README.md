@@ -1,6 +1,6 @@
 # Vaevictis - this is a playground!!
 
-This is a playground - master could be broken at any moment, use specific commit for instalation (see below)
+This is a playground - master could be broken at any moment, use specific commit to be sure you get working code (see Installation).
 
 Experimental combination of various ideas for dimensional reduction nad manifold analysis
 
@@ -17,7 +17,7 @@ Vaevictis runs on top of TensorFlow.
 
 In R 
 ```
-reticulate::py_install("git+https://github.com/stuchly/vaevictis.git@master",pip=TRUE)
+reticulate::py_install("git+https://github.com/stuchly/vaevictis.git@d997773b310ce7a5e5badf710119fb66506a5634",pip=TRUE)
 ```
 
 ## Example (R)
