@@ -219,8 +219,14 @@ metric="euclidean",margin=1.,k=30,knn=None):
     patience : integer, callback patience
     ivis_pretrain : integer, number of epochs to run without tsne regularisation as pretraining
     ww : list of floats, weights on losses in this order: tsne regularisation, ivis pn loss, reconstruction error, KL divergence
+    metric : str, "euclidean" or "angular"
+    margin : float, ivis margin
     k : integer, number of nearest neighbors
     knn : integer array, precomputed knn matrix
+    
+    Returns
+    ----------
+    
     """
     
     triplets=input_compute(x_train,k,metric,knn)
