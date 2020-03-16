@@ -25,4 +25,12 @@ reticulate::py_install("git+https://github.com/stuchly/vaevictis.git@43290fc13fe
 vae<-reticulate::import("vaevictis")
 red=vae$dimred(as.matrix(iris[,1:4]))
 plot(red[[1]],col=iris[,5])
+
+
+library(flowCore)
+fcs<-read.FCS("path_to_fcs_file")
+efcs<-exprs(fcs)[,c(24,29,30,31,33,37,38,44,46,48,49,50,52,56,57,59)] ## marker selection
+efcs<-asinh(efcs/5.0) #cytof transform
+vv=reticulate::import("vaevictis")
+red<-vv$dimred(efcs,ww=c(0.,1.,0.,0.)) #ivis only
 ```
