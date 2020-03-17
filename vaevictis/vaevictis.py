@@ -226,7 +226,9 @@ metric="euclidean",margin=1.,k=30,knn=None):
     
     Returns
     ----------
-    
+    X_new : array, shape (n_samples, embedding_dims) embedded data
+    predict : projection function
+    vae : whole vaevictis model
     """
     
     triplets=input_compute(x_train,k,metric,knn)
@@ -307,6 +309,9 @@ def loadModel(config_file,weights_file):
     np.random.rand(10,config["original_dim"])]
     new_model.train_on_batch(x,x[0])
     new_model.load_weights(weights_file)
-    return new_model
+    def predict(data):
+        return new_model.encoder(data)[0].numpy()
+        
+    return new_model, predict
 
     
