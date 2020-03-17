@@ -36,6 +36,6 @@ fcs<-read.FCS("path_to_fcs_file")
 efcs<-exprs(fcs)[,c(24,29,30,31,33,37,38,44,46,48,49,50,52,56,57,59)] ## marker selection
 efcs<-asinh(efcs/5.0) #cytof transform
 vv=reticulate::import("vaevictis")
-red<-vv$dimred(efcs,ww=c(0.,1.,0.,0.)) #ivis only
+red<-vv$dimred(efcs,ww=c(0.,1.,0.,0.)) #ivis only - much faster, but population less compact
 plot(red[[1]],pch=".") #reduced data in the first slot
 ```
