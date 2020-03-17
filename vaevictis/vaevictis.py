@@ -175,9 +175,9 @@ class Vaevictis(tf.keras.Model):
         return reconstructed
         
     def get_config(self):
-        return {'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape, 
-            'decoder_shape': self.decoder_shape, 'latent_dim': self.latent_dim, 'perplexity': self.perplexity, 'metric': self.metric,
-            'margin': self.margin,'ww': self.ww, 'name': self.name}
+        return {'original_dim': self.original_dim, 'encoder_shape': self.encoder_shape.copy(), 
+            'decoder_shape': self.decoder_shape.copy(), 'latent_dim': self.latent_dim, 'perplexity': self.perplexity, 'metric': self.metric,
+            'margin': self.margin,'ww': self.ww.copy(), 'name': self.name}
     
     def save(self, config_file, weights_file):
         
