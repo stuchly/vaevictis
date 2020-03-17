@@ -1,6 +1,5 @@
 import tensorflow as tf
 import tensorflow.keras.layers as layers
-import tensorflow.keras.backend as K
 import numpy as np
 from .tsne_helper_njit import compute_transition_probability
 from .ivis_helper import input_compute, pn_loss_g, euclidean_distance, cosine_distance
@@ -185,7 +184,7 @@ class Vaevictis(tf.keras.Model):
         json.dump(json_config, open(config_file,'w'))
         self.save_weights(weights_file)
     
-    def refit(self,x_train,perplexity=10.,batch_size=512,epochs=100,patience=0,alpha=10,vsplit=0.1,k=30,knn=None):
+    def refit(self,x_train,batch_size=512,epochs=100,patience=0,vsplit=0.1,k=30,knn=None):
         triplets=input_compute(x_train,k,self.metric,knn)
         es = EarlyStopping(monitor='val_loss', mode='min', restore_best_weights=True, patience=patience)
         self.fit(triplets,triplets[0],batch_size=batch_size,epochs=epochs,callbacks=[es],
@@ -294,6 +293,7 @@ metric="euclidean",margin=1.,k=30,knn=None):
     
 def loadModel(config_file,weights_file):
     config = json.load(open(config_file))
+    print(config["original_dim"])
     new_model=Vaevictis(config["original_dim"], config["encoder_shape"],
     config["decoder_shape"], config["latent_dim"], config["perplexity"], 
     config["metric"], config["margin"], config["ww"])
@@ -301,8 +301,10 @@ def loadModel(config_file,weights_file):
     optimizer = tf.keras.optimizers.Adam()
     nll_f=nll_builder(config["ww"])
     new_model.compile(optimizer,loss=nll_f)
-    x=np.random.rand(10,config["original_dim"])
-    new_model.train_on_batch(x,x)
+    x=[np.random.rand(10,config["original_dim"]),
+    np.random.rand(10,config["original_dim"]),
+    np.random.rand(10,config["original_dim"])]
+    new_model.train_on_batch(x,x[0])
     new_model.load_weights(weights_file)
     return new_model
 
