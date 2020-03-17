@@ -25,7 +25,11 @@ reticulate::py_install("git+https://github.com/stuchly/vaevictis.git@7fe190de4fd
 vae<-reticulate::import("vaevictis")
 red=vae$dimred(as.matrix(iris[,1:4]))
 plot(red[[1]],col=iris[,5])
-
+red1<-red[[2]](as.matrix(iris[,1:4])) #apply trained function
+red[[3]]$save(config_file = "config.json",weights_file = "weights.h5") # save model
+loaded<-vae$loadModel(config_file = "config.json",weights_file = "weights.h5") #load model
+red2<-loaded$encoder(as.matrix(iris[,1:4]))[[1]]$numpy() # encoder predict mean (embedded data) and variance
+plot(red2,col=iris[,5])
 
 library(flowCore)
 fcs<-read.FCS("path_to_fcs_file")
