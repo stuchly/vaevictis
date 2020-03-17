@@ -289,7 +289,7 @@ metric="euclidean",margin=1.,k=30,knn=None):
     
     z_test = vae.encoder(x_train)[0]
     z_test=z_test.numpy()
-    return z_test, predict, vae, vae.get_config(), vae.get_weights()
+    return z_test, predict, vae
     
 def loadModel(config_file,weights_file):
     config = json.load(open(config_file))
