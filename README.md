@@ -28,7 +28,7 @@ plot(red[[1]],col=iris[,5])
 red1<-red[[2]](as.matrix(iris[,1:4])) #apply trained function
 red[[3]]$save(config_file = "config.json",weights_file = "weights.h5") # save model
 loaded<-vae$loadModel(config_file = "config.json",weights_file = "weights.h5") #load model
-red2<-loaded$encoder(as.matrix(iris[,1:4]))[[1]]$numpy() # encoder predict mean (embedded data) and variance
+red2<-loaded[[2]](as.matrix(iris[,1:4]) # apply trained function
 plot(red2,col=iris[,5])
 
 library(flowCore)
