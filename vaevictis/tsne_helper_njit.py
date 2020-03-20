@@ -21,14 +21,14 @@ def compute_entropy(dist=np.array([]), beta=1.0) -> np.float64:
 
     
 @jit(nopython=True)
-def compute_transition_probability(x, perplexity=5.0,
+def compute_transition_probability(x, dist, perplexity=5.0,
                                    tol=1e-4, max_iter=50, verbose=False) -> np.float64:
     # x should be properly scaled so the distances are not either too small or too large
 
     (n, d) = x.shape
-    sum_x = np.sum(np.square(x), 1)
+    # sum_x = np.sum(np.square(x), 1)
 
-    dist = np.add(np.add(-2.0 * np.dot(x, x.T), sum_x).T, sum_x)
+    # dist = np.add(np.add(-2.0 * np.dot(x, x.T), sum_x).T, sum_x)
     p = np.zeros((n, n),dtype=np.float64)
 
     # Parameterized by precision

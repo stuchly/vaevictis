@@ -32,8 +32,13 @@ def nll_builder(ww):
 def tsne_reg_builder(ww,perplexity):
         
         def tsne_reg(x,z):
-            p=tf.numpy_function(compute_transition_probability,[x,perplexity, 1e-4, 50,False],tf.float64)
-            # p=compute_transition_probability(x.numpy(),perplexity, 1e-4, 50,False) ## for eager dubugging
+            sum_x = tf.reduce_sum(tf.square(x), 1)
+            dist = tf.constant(-2.0,tf.float64) * tf.matmul(x,
+                               x,
+                               transpose_b=True) + tf.reshape(sum_x, [-1, 1]) + sum_x
+
+            p=tf.numpy_function(compute_transition_probability,[x,dist,perplexity, 1e-4, 50,False],tf.float64)
+            # p=compute_transition_probability(x.numpy(),dist.numpy(),perplexity, 1e-4, 50,False) ## for eager dubugging
             nu = tf.constant(1.0, dtype=tf.float64)
             n=tf.shape(x)[0]
         
