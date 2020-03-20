@@ -1,4 +1,16 @@
+numThreads=12
+numInterOpThreads = 1
+
+# The total number of threads must be an integer multiple
+# of numInterOpThreads to make sure that all cores are used
+assert numThreads % numInterOpThreads == 0
+numIntraOpThreads = numThreads // numInterOpThreads
+os.environ['OMP_NUM_THREADS'] = str(numIntraOpThreads)
+
 import tensorflow as tf
+tf.config.threading.set_inter_op_parallelism_threads(numInterOpThreads)
+tf.config.threading.set_intra_op_parallelism_threads(numIntraOpThreads)
+
 import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
