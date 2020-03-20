@@ -1,4 +1,4 @@
-numThreads=12
+numThreads=10
 numInterOpThreads = 1
 
 # The total number of threads must be an integer multiple
