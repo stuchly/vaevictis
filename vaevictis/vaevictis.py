@@ -7,7 +7,7 @@ from .ivis_helper import input_compute, pn_loss_g, euclidean_distance, cosine_di
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 import json
-tf.config.threading.set_inter_op_parallelism_threads(
+tf.config.threading.set_intra_op_parallelism_threads(
     10
 )
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
