@@ -1,23 +1,11 @@
-numThreads=10
-numInterOpThreads = 1
-
-# The total number of threads must be an integer multiple
-# of numInterOpThreads to make sure that all cores are used
-assert numThreads % numInterOpThreads == 0
-numIntraOpThreads = numThreads // numInterOpThreads
-import os
-os.environ['OMP_NUM_THREADS'] = str(numIntraOpThreads)
-
 import tensorflow as tf
-tf.config.threading.set_inter_op_parallelism_threads(numInterOpThreads)
-tf.config.threading.set_intra_op_parallelism_threads(numIntraOpThreads)
-
 import tensorflow.keras.layers as layers
 import tensorflow.keras.backend as K
 import numpy as np
 from .tsne_helper_njit import compute_transition_probability
 from .ivis_helper import input_compute, pn_loss_g, euclidean_distance, cosine_distance
 from tensorflow.keras.callbacks import EarlyStopping
+import os
 import json
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
