@@ -7,6 +7,9 @@ from .ivis_helper import input_compute, pn_loss_g, euclidean_distance, cosine_di
 from tensorflow.keras.callbacks import EarlyStopping
 import os
 import json
+tf.config.threading.set_inter_op_parallelism_threads(
+    10
+)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 K.set_floatx('float64')
 
@@ -14,9 +17,7 @@ eps_std=tf.constant(1e-2,dtype=tf.float64)
 eps_sq=eps_std**2
 eta=tf.constant(1e-4,dtype=tf.float64)
 
-tf.config.threading.set_inter_op_parallelism_threads(
-    10
-)
+
 
 def nll(y_true, y_pred):
     """ loss """
