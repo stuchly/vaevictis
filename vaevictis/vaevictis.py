@@ -5,6 +5,7 @@ numInterOpThreads = 1
 # of numInterOpThreads to make sure that all cores are used
 assert numThreads % numInterOpThreads == 0
 numIntraOpThreads = numThreads // numInterOpThreads
+import os
 os.environ['OMP_NUM_THREADS'] = str(numIntraOpThreads)
 
 import tensorflow as tf
@@ -17,7 +18,6 @@ import numpy as np
 from .tsne_helper_njit import compute_transition_probability
 from .ivis_helper import input_compute, pn_loss_g, euclidean_distance, cosine_distance
 from tensorflow.keras.callbacks import EarlyStopping
-import os
 import json
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
