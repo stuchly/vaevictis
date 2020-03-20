@@ -13,6 +13,11 @@ K.set_floatx('float64')
 eps_std=tf.constant(1e-2,dtype=tf.float64)
 eps_sq=eps_std**2
 eta=tf.constant(1e-4,dtype=tf.float64)
+
+tf.config.threading.set_inter_op_parallelism_threads(
+    10
+)
+
 def nll(y_true, y_pred):
     """ loss """
     
