@@ -11,6 +11,9 @@ The ivis algorithm as described in the paper [Structure-preserving visualisation
 
 The scvis algorithm as described in the paper [Interpretable dimensionality reduction of single cell transcriptome data with deep generative models](https://www.nature.com/articles/s41467-018-04368-5)
 
+## Preprocess
+It is recommended to standardize the data prior to analysis (e.g. divide the channels by 0.99 percentil) to avoid numerical problems. This step is not done internally to avoid issues with application already trained model on new data.
+
 ## Installation
 
 Vaevictis runs on top of TensorFlow. 
