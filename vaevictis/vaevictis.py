@@ -305,7 +305,6 @@ metric="euclidean",margin=1.,k=30,knn=None):
     
 def loadModel(config_file,weights_file):
     config = json.load(open(config_file))
-    print(config["original_dim"])
     new_model=Vaevictis(config["original_dim"], config["encoder_shape"],
     config["decoder_shape"], config["latent_dim"], config["perplexity"], 
     config["metric"], config["margin"], config["ww"])
