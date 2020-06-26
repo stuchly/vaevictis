@@ -1,10 +1,9 @@
 from setuptools import setup
 
 setup(name='vaevictis',
-      version='0.3.0',
+      version='0.3.1',
       description='test',
       install_requires=["annoy","numba",
-      "tensorflow","tqdm","scipy",#"multiprocessing","collections","operator","time","random","sys","os","json",
-      "numpy"],
+      "tensorflow","tqdm","scipy","numpy","pyclustering"],
       packages=['vaevictis'],
       zip_safe=False)
