@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 import os
 import json
 
-#os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 K.set_floatx('float64')
 
 eps_std = tf.constant(1e-2, dtype=tf.float64)
