@@ -15,7 +15,7 @@ The scvis algorithm as described in the paper [Interpretable dimensionality redu
 It is recommended to standardize the data prior to analysis (e.g. divide the channels by 0.99 percentil) to avoid numerical problems. This step is not done internally to avoid issues with application already trained model on new data.
 
 ## Installation
-
+November 12, 2020 - reticulate version 1.16 or devel version - install_github("rstudio/reticulate") - is needed
 Vaevictis runs on top of TensorFlow. 
 
 In R 
