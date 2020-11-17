@@ -298,7 +298,7 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     encoder_model=tf.keras.models.Model(inputs,outputs)
                  
     def predict(data):
-        return encoder_model.predict(data,batch_size=batch_size).numpy()
+        return encoder_model.predict(data,batch_size=batch_size)
 
     z_test = predict(x_train)
     return z_test, predict, vae
@@ -325,6 +325,6 @@ def loadModel(config_file, weights_file):
     encoder_model=tf.keras.models.Model(inputs,outputs)
     
     def predict(data):
-        return encoder_model.predict(data,batch_size=batch_size).numpy()
+        return encoder_model.predict(data,batch_size=batch_size)
 
     return new_model, predict
