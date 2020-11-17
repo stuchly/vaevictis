@@ -297,14 +297,14 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     outputs=vae.encoder(inputs)[0]
     encoder_model=tf.keras.models.Model(inputs,outputs)
                  
-    def predict(data,batch_size_predict=512):
+    def predict(data,batch_size_predict=524288):
         return encoder_model.predict(data,batch_size=batch_size_predict)
 
     z_test = predict(x_train)
     return z_test, predict, vae
 
 
-def loadModel(config_file, weights_file,batch_size=512):
+def loadModel(config_file, weights_file):
     config = json.load(open(config_file))
     new_model = Vaevictis(config["original_dim"], config["encoder_shape"],
                           config["decoder_shape"], config["latent_dim"], config["perplexity"],
@@ -324,7 +324,7 @@ def loadModel(config_file, weights_file,batch_size=512):
     outputs=new_model.encoder(inputs)[0]
     encoder_model=tf.keras.models.Model(inputs,outputs)
     
-    def predict(data,batch_size_predict=512):
+    def predict(data,batch_size_predict=524288):
         return encoder_model.predict(data,batch_size=batch_size_predict)
 
     return new_model, predict
