@@ -208,7 +208,7 @@ class Vaevictis(tf.keras.Model):
 
 def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128, 128, 128],
            perplexity=10., batch_size=512, epochs=100, patience=0, ivis_pretrain=0, ww=[10., 10., 1., 1.],
-           metric="euclidean", margin=1., k=30, knn=None):
+           metric="euclidean", margin=1., k=30, knn=None,batch_size_predict=524288):
     """Wrapper for model build and training
 
     Parameters
@@ -229,7 +229,8 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     margin : float, ivis margin
     k : integer, number of nearest neighbors
     knn : integer array, precomputed knn matrix
-    
+    batch_size_predict : batch_size for model prediction
+
     Returns
     ----------
     X_new : array, shape (n_samples, embedding_dims) embedded data
@@ -297,7 +298,7 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     outputs=vae.encoder(inputs)[0]
     encoder_model=tf.keras.models.Model(inputs,outputs)
                  
-    def predict(data,batch_size_predict=524288):
+    def predict(data,batch_size_predict=batch_size_predict):
         return encoder_model.predict(data,batch_size=batch_size_predict)
 
     z_test = predict(x_train)
