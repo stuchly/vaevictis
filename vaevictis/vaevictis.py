@@ -298,9 +298,9 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     encoder_model=Model(inputs,outputs)
                  
     def predict(data):
-        return encoder_model.predict(data).numpy()
+        return encoder_model.predict(data,batch_size=batch_size).numpy()
 
-    z_test = vae.encoder(x_train)[0]
+    z_test = predict(data)
     z_test = z_test.numpy()
     return z_test, predict, vae
 
@@ -326,6 +326,6 @@ def loadModel(config_file, weights_file):
     encoder_model=Model(inputs,outputs)
     
     def predict(data):
-        return encoder_model.predict(data).numpy()
+        return encoder_model.predict(data,batch_size=batch_size).numpy()
 
     return new_model, predict
