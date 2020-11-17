@@ -304,7 +304,7 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     return z_test, predict, vae
 
 
-def loadModel(config_file, weights_file):
+def loadModel(config_file, weights_file,batch_size=512):
     config = json.load(open(config_file))
     new_model = Vaevictis(config["original_dim"], config["encoder_shape"],
                           config["decoder_shape"], config["latent_dim"], config["perplexity"],
