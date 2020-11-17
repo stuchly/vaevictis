@@ -300,7 +300,7 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     def predict(data):
         return encoder_model.predict(data,batch_size=batch_size).numpy()
 
-    z_test = predict(data)
+    z_test = predict(x_train)
     z_test = z_test.numpy()
     return z_test, predict, vae
 
