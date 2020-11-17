@@ -20,7 +20,7 @@ Vaevictis runs on top of TensorFlow.
 
 In R 
 ```
-reticulate::py_install("git+https://github.com/stuchly/vaevictis.git@4e2335a6706c9e966783a7f3957f804214d9c290",pip=TRUE)
+reticulate::py_install("git+https://github.com/stuchly/vaevictis.git@50152ac30587a3b8f32ad67397526bcddf6a2f8e",pip=TRUE)
 ```
 
 ## Example (R)
