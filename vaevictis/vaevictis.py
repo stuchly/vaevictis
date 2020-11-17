@@ -293,8 +293,12 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     # 
     # loss=train()
 
+    inputs=Input(shape=(x_train.shape[1],))
+    outputs=vae.encoder(inputs)[0]
+    encoder_model=Model(inputs,outputs)
+                 
     def predict(data):
-        return vae.encoder(data)[0].numpy()
+        return encoder_model.predict(data).numpy()
 
     z_test = vae.encoder(x_train)[0]
     z_test = z_test.numpy()
@@ -316,7 +320,12 @@ def loadModel(config_file, weights_file):
     new_model.train_on_batch(x, x[0])
     new_model.load_weights(weights_file)
 
+
+    inputs=Input(shape=(config["original_dim"],))
+    outputs=new_model.encoder(inputs)[0]
+    encoder_model=Model(inputs,outputs)
+    
     def predict(data):
-        return new_model.encoder(data)[0].numpy()
+        return encoder_model.predict(data).numpy()
 
     return new_model, predict
