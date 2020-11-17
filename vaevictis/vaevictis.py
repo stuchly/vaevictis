@@ -293,7 +293,7 @@ def dimred(x_train, dim=2, vsplit=0.1, enc_shape=[128, 128, 128], dec_shape=[128
     # 
     # loss=train()
 
-    inputs=Input(shape=(x_train.shape[1],))
+    inputs=layers.Input(shape=(x_train.shape[1],))
     outputs=vae.encoder(inputs)[0]
     encoder_model=Model(inputs,outputs)
                  
@@ -321,7 +321,7 @@ def loadModel(config_file, weights_file):
     new_model.load_weights(weights_file)
 
 
-    inputs=Input(shape=(config["original_dim"],))
+    inputs=layers.Input(shape=(config["original_dim"],))
     outputs=new_model.encoder(inputs)[0]
     encoder_model=Model(inputs,outputs)
     
