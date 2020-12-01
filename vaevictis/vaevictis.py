@@ -89,7 +89,7 @@ class Encoder(layers.Layer):
                  latent_dim=32,
                  activation="relu",
                  name='encoder',
-                 dynamic=True,
+                 dynamic=False,
                  **kwargs):
 
         super(Encoder, self).__init__(name=name, **kwargs)
